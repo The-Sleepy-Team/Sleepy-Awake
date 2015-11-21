@@ -9,7 +9,7 @@ A repository for our main controller application.
 Working on this section.
 
 ## Documentation
-Working on this section.
+A fairly extensive documentation of our work can be found <a href="https://github.com/The-Sleepy-Team/Sleepy.Awake/blob/master/Sleepy.Awake_Documentation.pdf">here</a>.
 
 ## License
 <a href="https://github.com/The-Sleepy-Team/Sleepy.Awake/blob/master/LICENSE" target="_blank">MIT License</a>
