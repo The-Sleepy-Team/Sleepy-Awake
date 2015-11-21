@@ -8,8 +8,11 @@ A repository for our main controller application.
 ## Installation
 Working on this section.
 
+## File Structure
+Working on this section.
+
 ## Documentation
-A fairly extensive documentation of our work can be found <a href="https://github.com/The-Sleepy-Team/Sleepy.Awake/blob/master/Sleepy.Awake_Documentation.pdf">here</a>.
+A fairly extensive documentation of our work can be found <a href="https://github.com/The-Sleepy-Team/Sleepy.Awake/blob/master/Sleepy.Awake_Documentation.pdf" target="_blank">here</a>.
 
 ## License
 <a href="https://github.com/The-Sleepy-Team/Sleepy.Awake/blob/master/LICENSE" target="_blank">MIT License</a>
