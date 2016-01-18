@@ -15,8 +15,12 @@ from email.mime.multipart import MIMEMultipart
 # Main method of the program which will run first when file is executed
 def main():
     print('Hello world!');
-    sendEmail("trandl1@uci.edu", 'Just a test', 'It works!');
+    print('Program ran on boot, awesome!');
+    sendEmail("trandl1@uci.edu", 'Boot / Infinite Loop Test', 'I am sleepy...');
     print('Email sent!');
+    print('Going into infinite loop');
+    while 1 :
+        nothing = 0;
 
 # Method for sending an email to a user
 def sendEmail(user, subject, content):
