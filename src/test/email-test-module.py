@@ -104,7 +104,7 @@ def checkForType(session, emailType):
 # Method for parsing through the emails
 def parseEmails(session, emails):
     # Iterating through each new email
-    emailContent = MIMEMultipart('alternative');
+    emailContent = {};
     for num in emails[0].split():
         # Getting the data for each email
         type, data = session.fetch(num, '(RFC822)');
