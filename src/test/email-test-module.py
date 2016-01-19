@@ -17,10 +17,15 @@ import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+# Creating global variables
+WINDOW_POSITION = 0;    # Position of the window, relative to openness
+                        # Can take on any percentages (eg. 10% = 10, 75% = 75)
+                        # 100 = 100% opened
+
 # Main method of the program which will run first when file is executed
 def main():
-    # # Letting the user know the device is operational, especially useful for headless operation
-    # sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
+    # Letting the user know the device is operational, especially useful for headless operation
+    sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
 
     # Infinite loop to constantly check email
     while True:
@@ -133,8 +138,17 @@ def readEmails(session, emails):
 
 # Method for parsing individual emails
 def parseEmail(email):
+    # Determining if the email's sender is the one you want
     if validateSender('sleepymrwindow@gmail.com', email['From']):
-        print('correct sender!');
+        # Parsing the subject of the email to look for events
+        subjectContent = email['Subject'].split(':');
+
+        # Removing all whitespace characters from the content
+        subjectContent = removeWhitespaces(subjectContent);
+
+        # Parsing the actions depending on categories
+        if subjectContent[0] == 'REQUEST_ACTION_NOW':
+            requestActionNowHandler(subjectContent[1]);
 
 # Method for validating the sender of an email
 # Returns true if the particular email's sender matches the one you specifiy, returns false otherwise
@@ -145,5 +159,53 @@ def validateSender(originalEmail, senderEmail):
         return True;
 
     return False;
+
+# Method for determining which event takes place for a REQUEST_ACTION_NOW request type
+def requestActionNowHandler(content):
+    # Splitting the actions up by commas
+    actions = content.split(',');
+
+    # Removing all whitespace characters from the actions
+    actions = removeWhitespaces(actions);
+
+    if actions[0] == 'WINDOW_OPEN':
+        if WINDOW_POSITION <= 100:
+            openWindow(100);
+    elif actions[0] == 'WINDOW_CLOSE':
+        if WINDOW_POSITION >= 0:
+            closeWindow(0);
+    elif actions[0] == 'WINDOW_OPEN_POSITION':
+        if WINDOW_POSITION < float(actions[1]):
+            openWindow(float(actions[1]));
+    elif actions[0] == 'WINDOW_CLOSE_POSITION':
+        if WINDOW_POSITION > float(actions[1]):
+            closeWindow(float(actions[1]));
+    else:
+        print('No correct command!');
+
+# Method for removing all whitespace characters from a list
+# Returns the list with removed whitespace characters
+def removeWhitespaces(listContent):
+    i = 0;
+    for content in listContent:
+        listContent[i] = ''.join(content.split());
+        i = i + 1;
+    return listContent;
+
+# Method for opening the window
+def openWindow(percentage):
+    # Changing global variables
+    global WINDOW_POSITION;
+
+    print('Opening window to ' + str(percentage) + '%...');
+    WINDOW_POSITION = percentage;
+
+# Method for closing the window
+def closeWindow(percentage):
+    # Changing global variables
+    global WINDOW_POSITION;
+
+    print('Closing window to ' + str(percentage) + '%...');
+    WINDOW_POSITION = percentage;
 
 main(); # Call to main method so that it runs first
