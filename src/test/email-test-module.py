@@ -19,24 +19,18 @@ from email.mime.multipart import MIMEMultipart
 
 # Main method of the program which will run first when file is executed
 def main():
-    print('Hello world!');
+    # Letting the user know the device is operational, especially useful for headless operation
+    sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
 
-    # Checking if new, unread emails exists
-    session = imaplib.IMAP4_SSL('imap.gmail.com');
-    emails = checkForEmails(session);
-
-    # Parsing through the emails if they exist
-    if emails != False:
-        parseEmails(session, emails);
-
-    # # Letting the user know the device is operational, especially useful for headless operation
-    # sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
-    #
-    # print('Message sent!');
-
-    # print('Going into infinite loop');
-    # while 1 :
-    #     nothing = 0;
+    # Infinite loop to constantly check email
+    while True:
+        # Creating a session and then checking for new emails
+        session = imaplib.IMAP4_SSL('imap.gmail.com');
+        emails = checkForEmails(session);
+        # If new emails exist, parse them and then close the session
+        if emails != False:
+            parseEmails(session, emails);
+            session.close();
 
 # Method for sending an email to a user
 def sendEmail(recpient, subject, content):
@@ -110,6 +104,7 @@ def checkForType(session, emailType):
 # Method for parsing through the emails
 def parseEmails(session, emails):
     # Iterating through each new email
+    emailContent = MIMEMultipart('alternative');
     for num in emails[0].split():
         # Getting the data for each email
         type, data = session.fetch(num, '(RFC822)');
@@ -117,15 +112,23 @@ def parseEmails(session, emails):
             if isinstance(response, tuple):
                 # Separating the contents of each email
                 original = email.message_from_string(response[1]);
-                print(original['From']);
-                print(original['Subject']);
+                emailContent['From'] = original['From'];
+                print(emailContent['From']);
+                emailContent['Subject'] = original['Subject'];
+                print(emailContent['Subject']);
 
                 # Obtaining the body of the email
                 for part in original.walk():
                     if part.get_content_type() == 'text/plain':
-                        print part.get_payload()
+                        emailContent['Body'] = part.get_payload();
+                        print(emailContent['Body']);
+
+                # Sending an email to the user (just for testing headless operation)
+                sendEmail('4084669915@txt.att.net', 'New Email!', '\n\nFrom: ' + emailContent['From'] + '\n'
+                                                                    + 'Subject: ' + emailContent['Subject'] +'\n'
+                                                                    + 'Body: ' + emailContent['Body']);
 
                 # Setting the email flag to seen
                 type, data = session.store(num, '+FLAGS', '\\Seen')
 
-main(); # Call to main function so that it runs first
+main(); # Call to main method so that it runs first
