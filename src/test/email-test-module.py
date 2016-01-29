@@ -27,6 +27,7 @@ WINDOW_POSITION     = 0;    # Position of the window, relative to openness
 BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
 TEMPERATURE         = 0.0;  # Temperature will be in Fahrenheit
 LIGHT_LEVEL         = 0;    # Still deciding on units
+PRESET              = 1;    # The current preset
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -184,6 +185,8 @@ def requestDataHandler(content):
         sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
     elif actions[0] == 'LIGHT_LEVEL':
         sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
+    elif actions[0] == 'PRESET':
+        sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
     else:
         print('No correct command!');
 
@@ -217,10 +220,11 @@ def requestActionNowHandler(content):
         if BLINDS_POSITION < float(actions[1]):
             openBlinds(float(actions[1]));
     elif actions[0] == 'BLINDS_CLOSE_POSITION':
-        print('gets in before close');
         if BLINDS_POSITION > float(actions[1]):
             closeBlinds(float(actions[1]));
-            print('closed');
+    elif actions[0] == 'PRESET_CHANGE':
+        if PRESET != int(actions[1]):
+            changePreset(int(actions[1]));
     else:
         print('No correct command!');
 
@@ -264,5 +268,14 @@ def closeBlinds(percentage):
 
     print('Closing blinds to ' + str(percentage) + '%...');
     BLINDS_POSITION = percentage;
+
+# Method for changing the current preset
+def changePreset(preset):
+    # Changing global variables
+    global PRESET;
+
+    print('Changing preset to ' + str(preset) + '...');
+    PRESET = preset;
+
 
 main(); # Call to main method so that it runs first
