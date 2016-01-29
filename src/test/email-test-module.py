@@ -185,7 +185,7 @@ def requestDataHandler(content):
     elif actions[0] == 'LIGHT_LEVEL':
         sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
     else:
-        Print
+        print('No correct command!');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
@@ -213,6 +213,14 @@ def requestActionNowHandler(content):
     elif actions[0] == 'BLINDS_CLOSE':
         if BLINDS_POSITION > 0:
             closeBlinds(0);
+    elif actions[0] == 'BLINDS_OPEN_POSITION':
+        if BLINDS_POSITION < float(actions[1]):
+            openBlinds(float(actions[1]));
+    elif actions[0] == 'BLINDS_CLOSE_POSITION':
+        print('gets in before close');
+        if BLINDS_POSITION > float(actions[1]):
+            closeBlinds(float(actions[1]));
+            print('closed');
     else:
         print('No correct command!');
 
