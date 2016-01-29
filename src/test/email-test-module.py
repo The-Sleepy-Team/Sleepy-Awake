@@ -18,9 +18,14 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Creating global variables
-WINDOW_POSITION = 0;    # Position of the window, relative to openness
-                        # Can take on any percentages (eg. 10% = 10, 75% = 75)
-                        # 100 = 100% opened
+rPiEmail        = 'sleepyraspberrypi@gmail.com';
+rPiEmailPW      = '123abc123ABC';
+mrWindowEmail   = 'sleepymrwindow@gmail.com';
+WINDOW_POSITION = 0;        # Position of the window, relative to openness
+                            # Can take on any percentages (eg. 10% = 10, 75% = 75)
+                            # 100 = 100% opened
+TEMPERATURE     = 0.0;      # Temperature will be in Fahrenheit
+LIGHT_LEVEL     = 0;        # Still deciding on units
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -42,8 +47,8 @@ def sendEmail(recpient, subject, content):
     # Providing gmail information
     SMTP_SERVER     = 'smtp.gmail.com';
     SMTP_PORT       = 587;
-    GMAIL_USERNAME  = 'sleepyraspberrypi@gmail.com';
-    GMAIL_PASSWORD  = '123abc123ABC';
+    GMAIL_USERNAME  = rPiEmail;
+    GMAIL_PASSWORD  = rPiEmailPW;
 
     # Establishing a gmail session
     session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT);
@@ -68,7 +73,7 @@ def sendEmail(recpient, subject, content):
 # Returns the new emails if they exist, returns false otherwise
 def checkForEmails(session):
     # Attempting to login
-    if imapLogin(session, 'sleepyraspberrypi@gmail.com', '123abc123ABC'):
+    if imapLogin(session, rPiEmail, rPiEmailPW):
         # If login is successful, check the INBOX mailbox
         if checkMailbox(session, 'INBOX'):
             # If the INBOX mailbox exists, check for unread emails
@@ -139,7 +144,7 @@ def readEmails(session, emails):
 # Method for parsing individual emails
 def parseEmail(email):
     # Determining if the email's sender is the one you want
-    if validateSender('sleepymrwindow@gmail.com', email['From']):
+    if validateSender(mrWindowEmail, email['From']):
         # Parsing the subject of the email to look for events
         subjectContent = email['Subject'].split(':');
 
@@ -147,7 +152,9 @@ def parseEmail(email):
         subjectContent = removeWhitespaces(subjectContent);
 
         # Parsing the actions depending on categories
-        if subjectContent[0] == 'REQUEST_ACTION_NOW':
+        if subjectContent[0] == 'REQUEST_DATA':
+            requestDataHandler(subjectContent[1]);
+        elif subjectContent[0] == 'REQUEST_ACTION_NOW':
             requestActionNowHandler(subjectContent[1]);
 
 # Method for validating the sender of an email
@@ -159,6 +166,21 @@ def validateSender(originalEmail, senderEmail):
         return True;
 
     return False;
+
+# Method for determining which event takes place for a REQUEST_DATA request type
+def requestDataHandler(content):
+    # Splitting the actions up by commas
+    actions = content.split(',');
+
+    # Removing all whitespace characters from the actions
+    actions = removeWhitespaces(actions);
+
+    if actions[0] == 'WINDOW_POSITION':
+        sendEmail(mrWindowEmail, str(WINDOW_POSITION), 'Da window position info 4 u');
+    elif actions[0] == 'TEMPERATURE':
+        sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
+    elif actions[0] == 'LIGHT_LEVEL':
+        sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
