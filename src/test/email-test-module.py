@@ -184,6 +184,8 @@ def requestDataHandler(content):
         sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
     elif actions[0] == 'LIGHT_LEVEL':
         sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
+    else:
+        Print
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
@@ -194,10 +196,10 @@ def requestActionNowHandler(content):
     actions = removeWhitespaces(actions);
 
     if actions[0] == 'WINDOW_OPEN':
-        if WINDOW_POSITION <= 100:
+        if WINDOW_POSITION < 100:
             openWindow(100);
     elif actions[0] == 'WINDOW_CLOSE':
-        if WINDOW_POSITION >= 0:
+        if WINDOW_POSITION > 0:
             closeWindow(0);
     elif actions[0] == 'WINDOW_OPEN_POSITION':
         if WINDOW_POSITION < float(actions[1]):
@@ -205,6 +207,12 @@ def requestActionNowHandler(content):
     elif actions[0] == 'WINDOW_CLOSE_POSITION':
         if WINDOW_POSITION > float(actions[1]):
             closeWindow(float(actions[1]));
+    elif actions[0] == 'BLINDS_OPEN':
+        if BLINDS_POSITION < 100:
+            openBlinds(100);
+    elif actions[0] == 'BLINDS_CLOSE':
+        if BLINDS_POSITION > 0:
+            closeBlinds(0);
     else:
         print('No correct command!');
 
@@ -232,5 +240,21 @@ def closeWindow(percentage):
 
     print('Closing window to ' + str(percentage) + '%...');
     WINDOW_POSITION = percentage;
+
+# Method for opening the blinds
+def openBlinds(percentage):
+    # Changing global bariavles
+    global BLINDS_POSITION;
+
+    print('Opening blinds to ' + str(percentage) + '%...');
+    BLINDS_POSITION = percentage;
+
+# Method for closing the blinds
+def closeBlinds(percentage):
+    # Changing global variables
+    global BLINDS_POSITION;
+
+    print('Closing blinds to ' + str(percentage) + '%...');
+    BLINDS_POSITION = percentage;
 
 main(); # Call to main method so that it runs first
