@@ -18,14 +18,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Creating global variables
-rPiEmail        = 'sleepyraspberrypi@gmail.com';
-rPiEmailPW      = '123abc123ABC';
-mrWindowEmail   = 'sleepymrwindow@gmail.com';
-WINDOW_POSITION = 0;        # Position of the window, relative to openness
+rPiEmail            = 'sleepyraspberrypi@gmail.com';
+rPiEmailPW          = '123abc123ABC';
+mrWindowEmail       = 'sleepymrwindow@gmail.com';
+WINDOW_POSITION     = 0;    # Position of the window, relative to openness
                             # Can take on any percentages (eg. 10% = 10, 75% = 75)
                             # 100 = 100% opened
-TEMPERATURE     = 0.0;      # Temperature will be in Fahrenheit
-LIGHT_LEVEL     = 0;        # Still deciding on units
+BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
+TEMPERATURE         = 0.0;  # Temperature will be in Fahrenheit
+LIGHT_LEVEL         = 0;    # Still deciding on units
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -177,6 +178,8 @@ def requestDataHandler(content):
 
     if actions[0] == 'WINDOW_POSITION':
         sendEmail(mrWindowEmail, str(WINDOW_POSITION), 'Da window position info 4 u');
+    elif actions[0] == 'BLINDS_POSITION':
+        sendEmail(mrWindowEmail, str(BLINDS_POSITION), 'Da blinds position info 4 u');
     elif actions[0] == 'TEMPERATURE':
         sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
     elif actions[0] == 'LIGHT_LEVEL':
