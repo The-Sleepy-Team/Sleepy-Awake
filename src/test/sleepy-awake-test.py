@@ -35,16 +35,18 @@ PRESET              = 1;    # The current preset
 # Main method of the program which will run first when file is executed
 def main():
     # Letting the user know the device is operational, especially useful for headless operation
-    sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
+    # sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
 
     # Setting the next minute
     nextMin = time.localtime().tm_min + 1;
 
-    # Infinite loop to constantly check email
+    # Infinite loop to constantly check email and preset file
     while True:
         # Checking the preset text file every minute
+        # print(str(time.localtime().tm_hour) + ' ' + str(time.localtime().tm_min) + ' ' + str(time.localtime().tm_sec));
         if str(time.localtime().tm_min) == str(nextMin):
             nextMin = getNextMin(time.localtime().tm_hour, time.localtime().tm_min);
+            checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
 
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
@@ -287,7 +289,7 @@ def requestActionLaterHandler(content):
     actions = removeWhitespaces(actions);
 
     if actions[0] == 'NEW_PRESET':
-        file_object = open('preset_' + str(PRESET) + '.txt', 'w');
+        file_object = open('preset_' + str(PRESET) + '.txt', 'w'); # Overwriting the old file, if it exists
         print('Created a new preset ' + str(PRESET) + ' text file...');
         file_object.close();
     elif actions[0] == 'WINDOW_OPEN':
@@ -308,6 +310,8 @@ def requestActionLaterHandler(content):
         appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
     else:
         print('Incorrect action later request...');
+
+    print('Added new instruction to preset ' + str(PRESET) + ': ' + content);
 
 # Method for removing all whitespace characters from a list
 # Returns the list with removed whitespace characters
@@ -371,8 +375,34 @@ def getNextMin(hour, minute):
 
 # Method for opening a preset text file and appending to it
 def appendToPresetFile(contentToAdd):
-    file_object = open('preset_' + str(PRESET) + '.txt', 'a');
+    file_object = open('preset_' + str(PRESET) + '.txt', 'a'); # Appending to an existing file
     file_object.write(contentToAdd);
     file_object.close();
+
+# Method for checking a preset file for timed events
+def checkPresetFile(hour, minute):
+    file_object = open('preset_' + str(PRESET) + '.txt', 'r'); # Reading an existing file
+    for line in file_object:
+        # Splitting the actions up by commas
+        actions = line.split(',');
+
+        # Removing all whitespace characters from the actions
+        actions = removeWhitespaces(actions);
+
+        # Splitting the time in the file into hour and minute
+        time = actions[0].split(':');
+
+        # Removing the first 0 if the minute or hour is less than 10
+        if time[0][0] == '0':
+            time[0] = time[0].replace('0', '');
+        if time[1][0] == '0':
+            time[1] = time[1].replace('0', '');
+
+        # Executing the action if it is time
+        if (str(time[0]) == str(hour) and str(time[1]) == str(minute)):
+            if len(actions) == 3: # Determining if a second parameter was given
+                requestActionNowHandler(actions[1] + ', ' + actions[2]);
+            else:
+                requestActionNowHandler(actions[1]);
 
 main(); # Call to main method so that it runs first
