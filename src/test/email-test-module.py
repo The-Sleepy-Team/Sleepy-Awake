@@ -264,6 +264,10 @@ def requestActionLaterHandler(content):
         appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
     elif actions[0] == 'BLINDS_CLOSE':
         appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    elif actions[0] == 'BLINDS_OPEN_POSITION':
+        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    elif actions[0] == 'BLINDS_CLOSE_POSITION':
+        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
     else:
         print('Incorrect action later request...');
 
