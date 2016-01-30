@@ -251,9 +251,21 @@ def requestActionLaterHandler(content):
     if actions[0] == 'NEW_PRESET':
         file_object = open('preset_' + str(PRESET) + '.txt', 'w');
         print('Created a new preset ' + str(PRESET) + ' text file...');
+        file_object.close();
     elif actions[0] == 'WINDOW_OPEN':
-        file_object = open('preset_' + str(PRESET) + '.txt', 'a');
-        file_object.write(actions[1] + ', ' + actions[0]);
+        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    elif actions[0] == 'WINDOW_CLOSE':
+        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    elif actions[0] == 'WINDOW_OPEN_POSITION':
+        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    elif actions[0] == 'WINDOW_CLOSE_POSITION':
+        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    elif actions[0] == 'BLINDS_OPEN':
+        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    elif actions[0] == 'BLINDS_CLOSE':
+        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    else:
+        print('Incorrect action later request...');
 
 # Method for removing all whitespace characters from a list
 # Returns the list with removed whitespace characters
@@ -314,5 +326,11 @@ def getNextMin(hour, minute):
             return minute + 1;
     else:
         return minute + 1;
+
+# Method for opening a preset text file and appending to it
+def appendToPresetFile(contentToAdd):
+    file_object = open('preset_' + str(PRESET) + '.txt', 'a');
+    file_object.write(contentToAdd);
+    file_object.close();
 
 main(); # Call to main method so that it runs first
