@@ -14,6 +14,7 @@ import imaplib
 import getpass
 import email
 import datetime
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -34,8 +35,15 @@ def main():
     # Letting the user know the device is operational, especially useful for headless operation
     sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!');
 
+    # Setting the next minute
+    nextMin = time.localtime().tm_min + 1;
+
     # Infinite loop to constantly check email
     while True:
+        # Checking the preset text file every minute
+        if str(time.localtime().tm_min) == str(nextMin):
+            nextMin = getNextMin(time.localtime().tm_hour, time.localtime().tm_min);
+
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
         emails = checkForEmails(session);
@@ -148,7 +156,7 @@ def parseEmail(email):
     # Determining if the email's sender is the one you want
     if validateSender(mrWindowEmail, email['From']):
         # Parsing the subject of the email to look for events
-        subjectContent = email['Subject'].split(':');
+        subjectContent = email['Subject'].split('=');
 
         # Removing all whitespace characters from the content
         subjectContent = removeWhitespaces(subjectContent);
@@ -158,6 +166,10 @@ def parseEmail(email):
             requestDataHandler(subjectContent[1]);
         elif subjectContent[0] == 'REQUEST_ACTION_NOW':
             requestActionNowHandler(subjectContent[1]);
+        elif subjectContent[0] == 'REQUEST_ACTION_LATER':
+            requestActionLaterHandler(subjectContent[1]);
+        else:
+            print('Incorrect request type...');
 
 # Method for validating the sender of an email
 # Returns true if the particular email's sender matches the one you specifiy, returns false otherwise
@@ -188,7 +200,7 @@ def requestDataHandler(content):
     elif actions[0] == 'PRESET':
         sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
     else:
-        print('No correct command!');
+        print('Incorrect data request...');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
@@ -226,7 +238,22 @@ def requestActionNowHandler(content):
         if PRESET != int(actions[1]):
             changePreset(int(actions[1]));
     else:
-        print('No correct command!');
+        print('Incorrect action now request...');
+
+# Method for determining which event takes place for a REQUEST_ACTION_NOW request type
+def requestActionLaterHandler(content):
+    # Splitting the actions up by commas
+    actions = content.split(',');
+
+    # Removing all whitespace characters from the actions
+    actions = removeWhitespaces(actions);
+
+    if actions[0] == 'NEW_PRESET':
+        file_object = open('preset_' + str(PRESET) + '.txt', 'w');
+        print('Created a new preset ' + str(PRESET) + ' text file...');
+    elif actions[0] == 'WINDOW_OPEN':
+        file_object = open('preset_' + str(PRESET) + '.txt', 'a');
+        file_object.write(actions[1] + ', ' + actions[0]);
 
 # Method for removing all whitespace characters from a list
 # Returns the list with removed whitespace characters
@@ -277,5 +304,15 @@ def changePreset(preset):
     print('Changing preset to ' + str(preset) + '...');
     PRESET = preset;
 
+# Method for getting the next minute based on the current hour and minute
+# Returns the next minute
+def getNextMin(hour, minute):
+    if hour == 23:
+        if minute == 59:
+            return 0;
+        else:
+            return minute + 1;
+    else:
+        return minute + 1;
 
 main(); # Call to main method so that it runs first
