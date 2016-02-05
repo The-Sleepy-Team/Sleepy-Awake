@@ -17,8 +17,23 @@ import datetime
 import time
 import urllib2
 import json
+import spidev
+import time
+import os
+import RPi.GPIO as GPIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# Setting up spidev
+spi = spidev.SpiDev();
+spi.open(0,0);
+
+# Setting up GPIO pins
+# GPIO.cleanup();
+GPIO.setmode(GPIO.BOARD);
+GPIO.setup(11, GPIO.OUT); # For the direction of the linear actuator
+GPIO.setup(12, GPIO.OUT); # To move the linear actuator
+p = GPIO.PWM(12, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -27,6 +42,8 @@ mrWindowEmail       = 'sleepymrwindow@gmail.com';
 WINDOW_POSITION     = 0;    # Position of the window, relative to openness
                             # Can take on any percentages (eg. 10% = 10, 75% = 75)
                             # 100 = 100% opened
+MAX_MCP_VALUE       = 300;  # Max MCP value that the physical window can open
+                            # 0 = 100% open
 BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
 TEMPERATURE         = 0.0;  # Temperature will be in Fahrenheit
 LIGHT_LEVEL         = 0;    # Still deciding on units
@@ -239,6 +256,8 @@ def requestDataHandler(content):
         sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
     elif actions[0] == 'PRESET':
         sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
+    elif actions[0] == 'MAX_MCP_VALUE':
+        sendEmail(mrWindowEmail, str(MAX_MCP_VALUE), 'Da max mcp value info 4 u');
     else:
         print('Incorrect data request...');
 
@@ -255,7 +274,7 @@ def requestActionNowHandler(content):
             openWindow(100);
     elif actions[0] == 'WINDOW_CLOSE':
         if WINDOW_POSITION > 0:
-            closeWindow(0);
+            closeWindow(100);
     elif actions[0] == 'WINDOW_OPEN_POSITION':
         if WINDOW_POSITION < float(actions[1]):
             openWindow(float(actions[1]));
@@ -277,6 +296,10 @@ def requestActionNowHandler(content):
     elif actions[0] == 'PRESET_CHANGE':
         if PRESET != int(actions[1]):
             changePreset(int(actions[1]));
+    elif actions[0] == 'SET_MAX_MCP':
+        global MAX_MCP_VALUE;
+        value = ReadChannel(0);
+        MAX_MCP_VALUE = value;
     else:
         print('Incorrect action now request...');
 
@@ -330,13 +353,34 @@ def openWindow(percentage):
     print('Opening window to ' + str(percentage) + '%...');
     WINDOW_POSITION = percentage;
 
+    GPIO.output(11, 0); # 0 to open
+
+    openTo = 1023 - (1023 - MAX_MCP_VALUE)*(percentage/100);
+
+    while int(ReadChannel(0)) >= int(openTo):
+        p.start(100);
+
+    p.stop();           # Stopping the operation of the linear actuator
+
 # Method for closing the window
 def closeWindow(percentage):
     # Changing global variables
     global WINDOW_POSITION;
 
     print('Closing window to ' + str(percentage) + '%...');
-    WINDOW_POSITION = percentage;
+    WINDOW_POSITION = 100 - percentage;
+
+    GPIO.output(11, 1);	# 1 to close
+
+    closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) + MAX_MCP_VALUE;
+
+    print('Channel: ' + str(ReadChannel(0)));
+    while int(ReadChannel(0)) < int(closeTo):
+        print('Channel: ' + str(ReadChannel(0)));
+        print('closeTo: ' + str(closeTo));
+        p.start(100);
+
+    p.stop();           # Stopping the operation of the linear actuator
 
 # Method for opening the blinds
 def openBlinds(percentage):
@@ -404,5 +448,12 @@ def checkPresetFile(hour, minute):
                 requestActionNowHandler(actions[1] + ', ' + actions[2]);
             else:
                 requestActionNowHandler(actions[1]);
+
+# Method for reading a specified channel of the MCP
+# Returns the data as an integer
+def ReadChannel(channel):
+    adc = spi.xfer2([1,(8+channel)<<4,0])
+    data = ((adc[1]&3) << 8) + adc[2]
+    return data
 
 main(); # Call to main method so that it runs first
