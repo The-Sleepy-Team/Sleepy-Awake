@@ -10,11 +10,11 @@ Authors:    Michael Ishimoto
 import RPi.GPIO as GPIO
 
 GPIO.setmode(GPIO.BOARD);	# Setting up GPIO pins
-GPIO.setup(11, GPIO.OUT);
-GPIO.setup(12, GPIO.OUT);
+GPIO.setup(11, GPIO.OUT);   # GPIO pin 17
+GPIO.setup(13, GPIO.OUT);   # GPIO pin 22
 
-GPIO.output(11, 0);	# 0 to open, 1 to close
-p = GPIO.PWM(12, 20000);
+GPIO.output(11, 1);	# 0 to open, 1 to close
+p = GPIO.PWM(13, 20000);
 p.start(100);
 input('Press return to stop:');
 p.stop();

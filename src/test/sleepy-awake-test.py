@@ -31,9 +31,11 @@ spi.open(0,0);
 # Setting up GPIO pins
 # GPIO.cleanup();
 GPIO.setmode(GPIO.BOARD);
-GPIO.setup(11, GPIO.OUT); # For the direction of the linear actuator
-GPIO.setup(13, GPIO.OUT); # To move the linear actuator
-p = GPIO.PWM(12, 20000);    # 20kHz
+GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
+                            # GPIO pin 17
+GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
+                            # GPIO pin 22
+p = GPIO.PWM(13, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -211,12 +213,16 @@ def readEmails(session, emails):
 # Method for parsing individual emails
 def parseEmail(email):
     # Determining if the email's sender is the one you want
+    print('email: ' + email['From']);
+    print(validateSender(mrWindowEmail, email['From']));
     if validateSender(mrWindowEmail, email['From']):
         # Parsing the subject of the email to look for events
         subjectContent = email['Subject'].split('=');
 
         # Removing all whitespace characters from the content
         subjectContent = removeWhitespaces(subjectContent);
+
+        print('gets in');
 
         # Parsing the actions depending on categories
         if subjectContent[0] == 'REQUEST_DATA':
@@ -232,7 +238,8 @@ def parseEmail(email):
 # Returns true if the particular email's sender matches the one you specifiy, returns false otherwise
 def validateSender(originalEmail, senderEmail):
     # Splitting the string so that the sender's email is the only content, not their name as well
-    senderEmail = senderEmail[senderEmail.find("<") + 1 : senderEmail.find(">")];
+    if (senderEmail.find(">") != -1):
+        senderEmail = senderEmail[senderEmail.find("<") + 1 : senderEmail.find(">")];
     if originalEmail == senderEmail:
         return True;
 
