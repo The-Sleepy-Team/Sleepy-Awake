@@ -54,7 +54,7 @@ PRESET              = 1;    # The current preset
 # Main method of the program which will run first when file is executed
 def main():
     # Letting the user know the device is operational, especially useful for headless operation
-    # sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
+    sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
 
     # Setting the next minute
     nextMin = time.localtime().tm_min + 1;
