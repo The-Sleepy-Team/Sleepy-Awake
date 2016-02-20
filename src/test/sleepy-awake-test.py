@@ -34,7 +34,13 @@ GPIO.setmode(GPIO.BOARD);
 GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
                             # GPIO pin 17
 GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
+                            # 0 to open, 1 to close
                             # GPIO pin 27
+GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
+                            # 0 to spin clockwise, 1 to spin counter-clockwise
+                            # GPIO pin 23
+GPIO.setup(18, GPIO.OUT);   # To have the motor spin
+                            # GPIO pin 24
 p = GPIO.PWM(13, 20000);    # 20kHz
 
 # Creating global variables
