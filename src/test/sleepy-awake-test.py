@@ -34,7 +34,7 @@ GPIO.setmode(GPIO.BOARD);
 GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
                             # GPIO pin 17
 GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
-                            # GPIO pin 22
+                            # GPIO pin 27
 p = GPIO.PWM(13, 20000);    # 20kHz
 
 # Creating global variables
