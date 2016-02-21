@@ -10,6 +10,7 @@ Authors:    Michael Ishimoto
 # Importing necessary libraries
 import smtplib
 import sys
+import subprocess
 import imaplib
 import getpass
 import email
@@ -56,6 +57,7 @@ BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
 TEMPERATURE         = 0.0;  # Temperature will be in Fahrenheit
 LIGHT_LEVEL         = 0;    # Still deciding on units
 PRESET              = 1;    # The current preset
+DESIRED_TEMP        = 0.0;  # The user's desired temperature
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -65,13 +67,21 @@ def main():
     # Setting the next minute
     nextMin = time.localtime().tm_min + 1;
 
-    # Infinite loop to constantly check email and preset file
+    # Setting the next hour
+    nextHour = getNextHour();
+
+    # Infinite loop to constantly check email, preset file, and temperatures
     while True:
         # Checking the preset text file every minute
         # print(str(time.localtime().tm_hour) + ' ' + str(time.localtime().tm_min) + ' ' + str(time.localtime().tm_sec));
         if str(time.localtime().tm_min) == str(nextMin):
             nextMin = getNextMin(time.localtime().tm_hour, time.localtime().tm_min);
             checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
+
+        # Checking the temperatures every hour
+        if str(time.localtime().tm_hour) == str(nextHour):
+            nextHour = getNextHour();
+            simpleAlgorithm();
 
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
@@ -80,42 +90,6 @@ def main():
         if emails != False:
             readEmails(session, emails);
             session.close();
-
-# Method for getting the current temperature in the specified state and city
-# Returns the current fahrenheit temperature as a float
-def getCurrentTemperature(state, city):
-    # Making an API call to weatherunderground
-    f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/geolookup/conditions/q/' + state + '/' + city + '.json');
-
-    # Parsing the returned JSON
-    json_string = f.read();
-    parsed_json = json.loads(json_string);
-    location = parsed_json['location']['city'];
-    temp_f = parsed_json['current_observation']['temp_f'];
-    # print "Current temperature in %s is: %s" % (location, temp_f)
-    f.close()
-
-    return temp_f;
-
-# Method for getting the temperature for the next 24 hours in the specified state and city
-# Returns the day's temperatures (in fahrenheit) as an array of integers
-def get24HrTemperatures(state, city):
-    # Making an API call to weatherunderground
-    f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/hourly/q/' + state + '/' + city + '.json');
-
-    # Parsing the returned JSON
-    json_string = f.read();
-    parsed_json = json.loads(json_string);
-
-    # Storing the temperature information in an array
-    forecast = []
-    for i in range(24):
-        forecast.append(parsed_json['hourly_forecast'][i]['temp']['english']);
-    # for i in range(24):
-    #     print "temperature for the hour %i: %s" % (i, forecast[i])
-    f.close();
-
-    return forecast;
 
 # Method for sending an email to a user
 def sendEmail(recpient, subject, content):
@@ -219,7 +193,6 @@ def readEmails(session, emails):
 # Method for parsing individual emails
 def parseEmail(email):
     # Determining if the email's sender is the one you want
-    print('email: ' + email['From']);
     print(validateSender(mrWindowEmail, email['From']));
     if validateSender(mrWindowEmail, email['From']):
         # Parsing the subject of the email to look for events
@@ -227,8 +200,6 @@ def parseEmail(email):
 
         # Removing all whitespace characters from the content
         subjectContent = removeWhitespaces(subjectContent);
-
-        print('gets in');
 
         # Parsing the actions depending on categories
         if subjectContent[0] == 'REQUEST_DATA':
@@ -313,6 +284,9 @@ def requestActionNowHandler(content):
         global MAX_MCP_VALUE;
         value = ReadChannel(0);
         MAX_MCP_VALUE = value;
+    elif actions[0] == 'SET_DESIRED_TEMP':
+        global DESIRED_TEMP;
+        DESIRED_TEMP = float(actions[1]);
     else:
         print('Incorrect action now request...');
 
@@ -420,7 +394,7 @@ def changePreset(preset):
     PRESET = preset;
 
 # Method for getting the next minute based on the current hour and minute
-# Returns the next minute
+# Returns the next minute as an integer
 def getNextMin(hour, minute):
     if hour == 23:
         if minute == 59:
@@ -429,6 +403,16 @@ def getNextMin(hour, minute):
             return minute + 1;
     else:
         return minute + 1;
+
+# Method for getting the next hour from the current hours
+# Returns the next hour as an integer
+def getNextHour():
+    currentHour = time.localtime().tm_hour;
+
+    if (currentHour == 23):
+        return 0;
+
+    return currentHour + 1;
 
 # Method for opening a preset text file and appending to it
 def appendToPresetFile(contentToAdd):
@@ -468,5 +452,84 @@ def ReadChannel(channel):
     adc = spi.xfer2([1,(8+channel)<<4,0])
     data = ((adc[1]&3) << 8) + adc[2]
     return data
+
+# Method for getting the current temperature in the specified state and city
+# Returns the current fahrenheit temperature as a float
+def getCurrentTemperature(state, city):
+    # Making an API call to weatherunderground
+    f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/geolookup/conditions/q/' + state + '/' + city + '.json');
+
+    # Parsing the returned JSON
+    json_string = f.read();
+    parsed_json = json.loads(json_string);
+    location = parsed_json['location']['city'];
+    temp_f = parsed_json['current_observation']['temp_f'];
+    # print "Current temperature in %s is: %s" % (location, temp_f)
+    f.close()
+
+    return temp_f;
+
+# Method for getting the temperature for the next 24 hours in the specified state and city
+# Returns the day's temperatures (in fahrenheit) as an array of integers
+def get24HrTemperatures(state, city):
+    # Making an API call to weatherunderground
+    f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/hourly/q/' + state + '/' + city + '.json');
+
+    # Parsing the returned JSON
+    json_string = f.read();
+    parsed_json = json.loads(json_string);
+
+    # Storing the temperature information in an array
+    forecast = []
+    for i in range(24):
+        forecast.append(parsed_json['hourly_forecast'][i]['temp']['english']);
+    # for i in range(24):
+    #     print "temperature for the hour %i: %s" % (i, forecast[i])
+    f.close();
+
+    return forecast;
+
+# Method for retrieving an EnOcean's sensor state / value
+# Returns the state as a string if the specified sensor is found, returns false otherwise
+def retrieveEnOceanState(sensor):
+    # Obtaining EnOcean sensor values
+    output = subprocess.Popen(['/opt/fhem/fhem.pl', 'localhost:7072', 'jsonList'], stdout=subprocess.PIPE).communicate()[0]
+    data = json.loads(output);
+    devices = data['Results'][3]['devices']
+    for device in devices:
+        if device['DEF'] == '018B79C1' and sensor == 'EDWS': # Door sensor
+            return device['STATE'] ;
+        if device['DEF'] == '01831695' and sensor == 'STM': # Temperature sensor
+            return device['STATE'];
+
+    return False;
+
+# Method for checking the temperatures and taking actions based on Results
+def simpleAlgorithm():
+    insideTemp = float(retrieveEnOceanState('STM')) * 1.8 + 32;
+    outsideTemp = getCurrentTemperature('CA', 'Irvine');
+
+    # print(type(insideTemp));
+    # print(type(outsideTemp));
+    # print(type(DESIRED_TEMP));
+
+    print('Inside temp: ' + str(insideTemp));
+    print('Outside temp: ' + str(outsideTemp));
+    print('Desired temp: ' + str(DESIRED_TEMP));
+
+    if insideTemp > DESIRED_TEMP:
+        if outsideTemp < insideTemp:
+            print('Opening window...');
+            openWindow(100);
+        else:
+            print('Closing window');
+            closeWindow(100);
+    elif insideTemp < DESIRED_TEMP:
+        if outsideTemp > insideTemp:
+            print('Opening window...');
+            openWindow(100);
+        else:
+            print('Closing window');
+            closeWindow(100);
 
 main(); # Call to main method so that it runs first

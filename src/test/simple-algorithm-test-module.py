@@ -10,11 +10,10 @@ Authors:    Michael Ishimoto
 import subprocess
 import json
 import urllib2
-import json
 import time
 
 desiredTemp = 70.0; # This is in Fahrenheit
-                        # All temperature values will be in Fahrenheit
+                    # All temperature values will be in Fahrenheit
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -23,7 +22,7 @@ def main():
 
     # Infinite loop to constantly check temperatures
     while True:
-        # if str(time.localtime().tm_hour) == str(nextHour):
+        if str(time.localtime().tm_hour) == str(nextHour):
             nextHour = getNextHour();
             simpleAlgorithm();
 
