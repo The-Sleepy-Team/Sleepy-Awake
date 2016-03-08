@@ -52,18 +52,21 @@ rPiEmailPW          = '123abc123ABC';
 mrWindowEmail       = 'sleepymrwindow@gmail.com';   
 _STATE              = 'CA';
 _CITY               = 'Irvine'; 
-WINDOW_POSITION     = 0;    # Position of the window, relative to openness
-                            # Can take on any percentages (eg. 10% = 10, 75% = 75)
-                            # 100 = 100% opened
-MAX_MCP_VALUE       = 300;  # Max MCP value that the physical window can open
-                            # 0 = 100% open
-BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
-TEMPERATURE         = 0.0;  # Current inside temperature
-                            # Temperature will be in Fahrenheit
-HOURLY_OUTSIDE_TEMP = [];   # 24 hour temperature predictions
-LIGHT_LEVEL         = 0;    # Still deciding on units
-PRESET              = 1;    # The current preset
-DESIRED_TEMP        = 0.0;  # The user's desired temperature
+WINDOW_POSITION     = 0;        # Position of the window, relative to openness
+                                # Can take on any percentages (eg. 10% = 10, 75% = 75)
+                                # 100 = 100% opened
+MAX_MCP_VALUE       = 300;      # Max MCP value that the physical window can open
+                                # 0 = 100% open
+BLINDS_POSITION     = 0;        # Similar to WINDOW_POSITION
+TEMPERATURE         = 0.0;      # Current inside temperature
+                                # Temperature will be in Fahrenheit
+HOURLY_OUTSIDE_TEMP = [];       # 24 hour temperature predictions
+LIGHT_LEVEL         = 0;        # Still deciding on units
+PRESET              = 1;        # The current preset
+DESIRED_TEMP        = 0.0;      # The user's desired temperature
+MANUAL_MODE         = True;     # Defaults to true
+AUTO_MODE           = False;    # Defaults to false
+PRESET_MODE         = False;    # Defaults to false
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -83,13 +86,12 @@ def main():
     # Infinite loop to constantly check for required actions
     while True:
         # Checking the preset text file every minute
-        # print(str(time.localtime().tm_hour) + ' ' + str(time.localtime().tm_min) + ' ' + str(time.localtime().tm_sec));
-        if str(time.localtime().tm_min) == str(nextMin):
+        if PRESET_MODE and str(time.localtime().tm_min) == str(nextMin):
             nextMin = getNextMin(time.localtime().tm_min);
             checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
 
-        # Checking the temperatures every hour
-        if str(time.localtime().tm_hour) == str(nextHour):
+        # Running our auto algorithm
+        if AUTO_MODE and str(time.localtime().tm_hour) == str(nextHour):
             nextHour = getNextHour();
             simpleAlgorithm();
 
@@ -311,6 +313,25 @@ def requestActionNowHandler(content):
         global _CITY;
         _CITY = actions[1];
         checkValidLocation(_STATE, _CITY);
+    elif actions[0] == 'SET_MODE':
+        global MANUAL_MODE;
+        global AUTO_MODE;
+        global PRESET_MODE; 
+
+        if actions[1] == 'MANUAUL':
+            MANUAL_MODE = True;
+            AUTO_MODE = False;
+            PRESET_MODE = False;
+        elif actions[1] == 'AUTO':
+            MANUAL_MODE = False;
+            AUTO_MODE = True;
+            PRESET_MODE = False;
+        elif actions[1] == 'PRESET':
+            MANUAL_MODE = True;
+            AUTO_MODE = False;
+            PRESET_MODE = True;
+        else:
+            print('Incorrect mode type...');
     else:
         print('Incorrect action now request...');
 
