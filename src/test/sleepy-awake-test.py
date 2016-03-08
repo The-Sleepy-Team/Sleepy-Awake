@@ -18,33 +18,33 @@ import datetime
 import time
 import urllib2
 import json
-import spidev
+# import spidev
 import time
 import os
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Setting up spidev
-spi = spidev.SpiDev();
-spi.open(0,0);
+# # Setting up spidev
+# spi = spidev.SpiDev();
+# spi.open(0,0);
 
-# Setting up GPIO pins
-# GPIO.cleanup();
-GPIO.setwarnings(False);    # Disabling warnings
-GPIO.setmode(GPIO.BOARD);
-GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
-                            # GPIO pin 17
-GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
-                            # 0 to open, 1 to close
-                            # GPIO pin 27
-GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
-                            # 0 to spin clockwise, 1 to spin counter-clockwise
-                            # GPIO pin 23
-GPIO.setup(18, GPIO.OUT);   # To have the motor spin
-                            # GPIO pin 24
-p = GPIO.PWM(13, 20000);    # 20kHz
-p = GPIO.PWM(16, 20000);    # 20kHz
+# # Setting up GPIO pins
+# # GPIO.cleanup();
+# GPIO.setwarnings(False);    # Disabling warnings
+# GPIO.setmode(GPIO.BOARD);
+# GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
+#                             # GPIO pin 17
+# GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
+#                             # 0 to open, 1 to close
+#                             # GPIO pin 27
+# GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
+#                             # 0 to spin clockwise, 1 to spin counter-clockwise
+#                             # GPIO pin 23
+# GPIO.setup(18, GPIO.OUT);   # To have the motor spin
+#                             # GPIO pin 24
+# p = GPIO.PWM(13, 20000);    # 20kHz
+# p = GPIO.PWM(16, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -492,6 +492,8 @@ def ReadChannel(channel):
 # Returns false and defaults the state / city to CA / Irvine if the combination is invalid
 # Also sends an email back to the Android application, notifying it of the invalid combination
 def checkValidLocation(state, city):
+    global _STATE;
+    global _CITY;
     # Making an API call to weatherunderground
     f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/geolookup/conditions/q/' + state + '/' + city + '.json');
 
@@ -505,8 +507,6 @@ def checkValidLocation(state, city):
             return True;
 
     # Changing state / city to defaut values
-    global _STATE;
-    global _CITY;
     _STATE = 'CA';
     _CITY = 'Irvine';
 
