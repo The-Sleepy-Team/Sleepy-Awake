@@ -31,6 +31,7 @@ spi.open(0,0);
 
 # Setting up GPIO pins
 # GPIO.cleanup();
+GPIO.setwarnings(False);    # Disabling warnings
 GPIO.setmode(GPIO.BOARD);
 GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
                             # GPIO pin 17
@@ -43,18 +44,23 @@ GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
 GPIO.setup(18, GPIO.OUT);   # To have the motor spin
                             # GPIO pin 24
 p = GPIO.PWM(13, 20000);    # 20kHz
+p = GPIO.PWM(16, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
 rPiEmailPW          = '123abc123ABC';
-mrWindowEmail       = 'sleepymrwindow@gmail.com';
+mrWindowEmail       = 'sleepymrwindow@gmail.com';   
+_STATE              = 'CA';
+_CITY               = 'Irvine'; 
 WINDOW_POSITION     = 0;    # Position of the window, relative to openness
                             # Can take on any percentages (eg. 10% = 10, 75% = 75)
                             # 100 = 100% opened
 MAX_MCP_VALUE       = 300;  # Max MCP value that the physical window can open
                             # 0 = 100% open
 BLINDS_POSITION     = 0;    # Similar to WINDOW_POSITION
-TEMPERATURE         = 0.0;  # Temperature will be in Fahrenheit
+TEMPERATURE         = 0.0;  # Current inside temperature
+                            # Temperature will be in Fahrenheit
+HOURLY_OUTSIDE_TEMP = [];   # 24 hour temperature predictions
 LIGHT_LEVEL         = 0;    # Still deciding on units
 PRESET              = 1;    # The current preset
 DESIRED_TEMP        = 0.0;  # The user's desired temperature
@@ -193,7 +199,6 @@ def readEmails(session, emails):
 # Method for parsing individual emails
 def parseEmail(email):
     # Determining if the email's sender is the one you want
-    print(validateSender(mrWindowEmail, email['From']));
     if validateSender(mrWindowEmail, email['From']):
         # Parsing the subject of the email to look for events
         subjectContent = email['Subject'].split('=');
@@ -235,8 +240,10 @@ def requestDataHandler(content):
     elif actions[0] == 'BLINDS_POSITION':
         sendEmail(mrWindowEmail, str(BLINDS_POSITION), 'Da blinds position info 4 u');
     elif actions[0] == 'TEMPERATURE':
+        TEMPERATURE = float(retrieveEnOceanState('STM')) * 1.8 + 32;
         sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
     elif actions[0] == 'LIGHT_LEVEL':
+        LIGHT_LEVEL = ReadChannel(1);
         sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
     elif actions[0] == 'PRESET':
         sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
@@ -287,6 +294,13 @@ def requestActionNowHandler(content):
     elif actions[0] == 'SET_DESIRED_TEMP':
         global DESIRED_TEMP;
         DESIRED_TEMP = float(actions[1]);
+    elif actions[0] == 'SET_STATE':
+        global _STATE;
+        _STATE = actions[1];
+    elif actions[0] == 'SET_CITY':
+        global _CITY;
+        _CITY = actions[1];
+        checkValidLocation(_STATE, _CITY);
     else:
         print('Incorrect action now request...');
 
@@ -361,10 +375,7 @@ def closeWindow(percentage):
 
     closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) + MAX_MCP_VALUE;
 
-    print('Channel: ' + str(ReadChannel(0)));
     while int(ReadChannel(0)) < int(closeTo):
-        print('Channel: ' + str(ReadChannel(0)));
-        print('closeTo: ' + str(closeTo));
         p.start(100);
 
     p.stop();           # Stopping the operation of the linear actuator
@@ -453,6 +464,36 @@ def ReadChannel(channel):
     data = ((adc[1]&3) << 8) + adc[2]
     return data
 
+# Method for checking if a state / city combination is valid for use with the API
+# Returns true if it is valid
+# Returns false and defaults the state / city to CA / Irvine if the combination is invalid
+# Also sends an email back to the Android application, notifying it of the invalid combination
+def checkValidLocation(state, city):
+    # Making an API call to weatherunderground
+    f = urllib2.urlopen('http://api.wunderground.com/api/12d1b60c95f74d26/geolookup/conditions/q/' + state + '/' + city + '.json');
+
+    if (f.getcode() == 200):    # If a response was given
+        # Parsing the returned JSON
+        json_string = f.read();
+        parsed_json = json.loads(json_string);
+
+        if len(parsed_json['response']) == 3:   # If a valid city / state was specified
+            print('Valid location: ' + _CITY + ', ' + _STATE);
+            return True;
+
+    # Changing state / city to defaut values
+    global _STATE;
+    global _CITY;
+    _STATE = 'CA';
+    _CITY = 'Irvine';
+
+    # Sending an email to the Android application to notify of the invalid state / city combination
+    sendEmail(mrWindowEmail, 'Invalid state / city combination', 'try harder yo');
+
+    print('An invalid state / city combination was entered, defaulting to CA / Irvine...');
+
+    return False;
+
 # Method for getting the current temperature in the specified state and city
 # Returns the current fahrenheit temperature as a float
 def getCurrentTemperature(state, city):
@@ -498,7 +539,7 @@ def retrieveEnOceanState(sensor):
     devices = data['Results'][3]['devices']
     for device in devices:
         if device['DEF'] == '018B79C1' and sensor == 'EDWS': # Door sensor
-            return device['STATE'] ;
+            return device['STATE'];
         if device['DEF'] == '01831695' and sensor == 'STM': # Temperature sensor
             return device['STATE'];
 
@@ -507,15 +548,7 @@ def retrieveEnOceanState(sensor):
 # Method for checking the temperatures and taking actions based on Results
 def simpleAlgorithm():
     insideTemp = float(retrieveEnOceanState('STM')) * 1.8 + 32;
-    outsideTemp = getCurrentTemperature('CA', 'Irvine');
-
-    # print(type(insideTemp));
-    # print(type(outsideTemp));
-    # print(type(DESIRED_TEMP));
-
-    print('Inside temp: ' + str(insideTemp));
-    print('Outside temp: ' + str(outsideTemp));
-    print('Desired temp: ' + str(DESIRED_TEMP));
+    outsideTemp = getCurrentTemperature(_STATE, _CITY);
 
     if insideTemp > DESIRED_TEMP:
         if outsideTemp < insideTemp:

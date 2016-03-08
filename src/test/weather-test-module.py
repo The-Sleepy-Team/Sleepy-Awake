@@ -13,9 +13,11 @@ import json
 # Main method of the program which will run first when file is executed
 def main():
     # Testing the functions
-    currentTemp = getCurrentTemperature('CA', 'Irvine');
+    state = 'CA';
+    city = 'Irvine';
+    currentTemp = getCurrentTemperature(city, state);
     print('currentTemp: ' + str(currentTemp));
-    dayTemps = get24HrTemperatures('CA', 'Irvine');
+    dayTemps = get24HrTemperatures(city, state);
     for i in range(len(dayTemps)):
         print('Temperature for hour ' + str(i) + ': ' + dayTemps[i]);
 
@@ -28,12 +30,16 @@ def getCurrentTemperature(state, city):
     # Parsing the returned JSON
     json_string = f.read();
     parsed_json = json.loads(json_string);
-    location = parsed_json['location']['city'];
-    temp_f = parsed_json['current_observation']['temp_f'];
-    # print "Current temperature in %s is: %s" % (location, temp_f)
-    f.close()
 
-    return temp_f;
+    if len(parsed_json['response']) == 3:   # If a valid city / state was specified
+        location = parsed_json['location']['city'];
+        temp_f = parsed_json['current_observation']['temp_f'];
+        # print "Current temperature in %s is: %s" % (location, temp_f)
+        f.close()
+
+        return temp_f;
+
+    return 0;
 
 # Method for getting the temperature for the next 24 hours in the specified state and city
 # Returns the day's temperatures (in fahrenheit) as an array of integers
@@ -45,14 +51,17 @@ def get24HrTemperatures(state, city):
     json_string = f.read();
     parsed_json = json.loads(json_string);
 
-    # Storing the temperature information in an array
-    forecast = []
-    for i in range(24):
-        forecast.append(parsed_json['hourly_forecast'][i]['temp']['english']);
-    # for i in range(24):
-    #     print "temperature for the hour %i: %s" % (i, forecast[i])
-    f.close();
+    if len(parsed_json['response']) == 3:   # If a valid city / state was specified
+        # Storing the temperature information in an array
+        forecast = []
+        for i in range(24):
+            forecast.append(parsed_json['hourly_forecast'][i]['temp']['english']);
+        # for i in range(24):
+        #     print "temperature for the hour %i: %s" % (i, forecast[i])
+        f.close();
 
-    return forecast;
+        return forecast;
+
+    return ['0'];
 
 main(); # Call to main method so that it runs first

@@ -22,4 +22,4 @@ def ReadChannel(channel):
 while True:
     value = ReadChannel(0);
 
-    print("Channel 0 value: " + str(value));
+    print("Channel 1 value: " + str(value));
