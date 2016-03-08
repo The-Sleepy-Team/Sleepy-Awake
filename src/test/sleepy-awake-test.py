@@ -71,23 +71,33 @@ def main():
     sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
 
     # Setting the next minute
-    nextMin = time.localtime().tm_min + 1;
+    nextMin = getNextMin(time.localtime().tm_min);
 
     # Setting the next hour
     nextHour = getNextHour();
 
-    # Infinite loop to constantly check email, preset file, and temperatures
+    # Setting the next five minutes
+    nextFiveMin = minutesFromNow(5);
+    print(nextFiveMin);
+
+    # Infinite loop to constantly check for required actions
     while True:
         # Checking the preset text file every minute
         # print(str(time.localtime().tm_hour) + ' ' + str(time.localtime().tm_min) + ' ' + str(time.localtime().tm_sec));
         if str(time.localtime().tm_min) == str(nextMin):
-            nextMin = getNextMin(time.localtime().tm_hour, time.localtime().tm_min);
+            nextMin = getNextMin(time.localtime().tm_min);
             checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
 
         # Checking the temperatures every hour
         if str(time.localtime().tm_hour) == str(nextHour):
             nextHour = getNextHour();
             simpleAlgorithm();
+
+        # Appending time and temperature to a file every ten minutes
+        if str(time.localtime().tm_min) == str(nextFiveMin):
+            nextFiveMin = minutesFromNow(5);
+            print(nextFiveMin);
+            print('writing stuff to file');
 
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
@@ -406,14 +416,27 @@ def changePreset(preset):
 
 # Method for getting the next minute based on the current hour and minute
 # Returns the next minute as an integer
-def getNextMin(hour, minute):
-    if hour == 23:
-        if minute == 59:
-            return 0;
-        else:
-            return minute + 1;
-    else:
-        return minute + 1;
+def getNextMin(minute):
+    # if hour == 23:
+    #     if minute == 59:
+    #         return 0;
+    #     else:
+    #         return minute + 1;
+    # else:
+    #     return minute + 1;
+    if minute == 59:
+        return 0;
+
+    return minute + 1;
+
+# Method for getting the number of minutes from a variable amount
+# Returns that amount
+def minutesFromNow(desiredMinutes):
+    nextMin = getNextMin(time.localtime().tm_min);
+    for i in range(desiredMinutes - 1):
+        nextMin = getNextMin(nextMin);
+
+    return nextMin;
 
 # Method for getting the next hour from the current hours
 # Returns the next hour as an integer
@@ -545,7 +568,7 @@ def retrieveEnOceanState(sensor):
 
     return False;
 
-# Method for checking the temperatures and taking actions based on Results
+# Method for checking the temperatures and taking actions based on results
 def simpleAlgorithm():
     insideTemp = float(retrieveEnOceanState('STM')) * 1.8 + 32;
     outsideTemp = getCurrentTemperature(_STATE, _CITY);
