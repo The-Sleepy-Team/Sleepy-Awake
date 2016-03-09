@@ -68,11 +68,13 @@ DESIRED_TEMP        = 73.0;     # The user's desired temperature
 MANUAL_MODE         = True;     # Defaults to true
 AUTO_MODE           = False;    # Defaults to false
 PRESET_MODE         = False;    # Defaults to false
+AUTO_BLINDS_MODE    = True;    # Defaults to false
 
 # Main method of the program which will run first when file is executed
 def main():
     # Letting the user know the device is operational, especially useful for headless operation
     sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
+    print('Program operating...');
 
     # Setting the next hour
     nextHour = getNextHour();
@@ -115,6 +117,10 @@ def main():
                 appendToLogFile('predictions.txt', 'a', (str(currHour)) + '.0' + ', ' + str(prediction) + '\n');
                 currHour += 1;
             print('New predictions saved...');
+
+        # Running the auto blinds algorithm, if applicable
+        if AUTO_BLINDS_MODE and newMin and (str(time.strftime('%H:%M')) == str('21:34') or str(time.strftime('%H:%M')) == str('21:35')):
+            blindsAutoAlgorithm();
 
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
@@ -336,6 +342,7 @@ def requestActionNowHandler(content):
     elif actions[0] == 'SET_DESIRED_TEMP':
         global DESIRED_TEMP;
         DESIRED_TEMP = float(actions[1]);
+        print('Requesting desired temperature change... [' + str(DESIRED_TEMP) + ']');
     elif actions[0] == 'SET_STATE':
         global _STATE;
         _STATE = actions[1];
@@ -348,7 +355,7 @@ def requestActionNowHandler(content):
         global AUTO_MODE;
         global PRESET_MODE; 
 
-        if actions[1] == 'MANUAUL':
+        if actions[1] == 'MANUAL':
             MANUAL_MODE = True;
             AUTO_MODE = False;
             PRESET_MODE = False;
@@ -667,5 +674,12 @@ def appendToLogFile(filename, modifier, contentToAdd):
     file_object = open(filename, modifier); # Appending to an existing file
     file_object.write(contentToAdd);
     file_object.close();
+
+# Method for opening and closing the blinds at a specific time
+def blindsAutoAlgorithm():
+    if BLINDS_POSITION > 0:
+        closeBlinds(0);
+    else:
+        openBlinds(100);
 
 main(); # Call to main method so that it runs first
