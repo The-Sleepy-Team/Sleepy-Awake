@@ -18,33 +18,33 @@ import datetime
 import time
 import urllib2
 import json
-# import spidev
+import spidev
 import time
 import os
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# # Setting up spidev
-# spi = spidev.SpiDev();
-# spi.open(0,0);
+# Setting up spidev
+spi = spidev.SpiDev();
+spi.open(0,0);
 
-# # Setting up GPIO pins
-# # GPIO.cleanup();
-# GPIO.setwarnings(False);    # Disabling warnings
-# GPIO.setmode(GPIO.BOARD);
-# GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
-#                             # GPIO pin 17
-# GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
-#                             # 0 to open, 1 to close
-#                             # GPIO pin 27
-# GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
-#                             # 0 to spin clockwise, 1 to spin counter-clockwise
-#                             # GPIO pin 23
-# GPIO.setup(18, GPIO.OUT);   # To have the motor spin
-#                             # GPIO pin 24
-# p = GPIO.PWM(13, 20000);    # 20kHz
-# p = GPIO.PWM(16, 20000);    # 20kHz
+# Setting up GPIO pins
+# GPIO.cleanup();
+GPIO.setwarnings(False);    # Disabling warnings
+GPIO.setmode(GPIO.BOARD);
+GPIO.setup(11, GPIO.OUT);   # For the direction of the linear actuator
+                            # GPIO pin 17
+GPIO.setup(13, GPIO.OUT);   # To move the linear actuator
+                            # 0 to open, 1 to close
+                            # GPIO pin 27
+GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
+                            # 0 to spin clockwise, 1 to spin counter-clockwise
+                            # GPIO pin 23
+GPIO.setup(18, GPIO.OUT);   # To have the motor spin
+                            # GPIO pin 24
+p = GPIO.PWM(13, 20000);    # 20kHz
+p = GPIO.PWM(16, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -58,7 +58,7 @@ WINDOW_POSITION     = 0;        # Position of the window, relative to openness
 MAX_MCP_VALUE       = 300;      # Max MCP value that the physical window can open
                                 # 0 = 100% open
 BLINDS_POSITION     = 0;        # Similar to WINDOW_POSITION
-TEMPERATURE         = 0.0;      # Current inside temperature
+TEMPERATURE         = 73.0;     # Current inside temperature
                                 # Temperature will be in Fahrenheit
 HOURLY_OUTSIDE_TEMP = [];       # 24 hour temperature predictions
 LIGHT_LEVEL         = 0;        # Still deciding on units
@@ -73,33 +73,47 @@ def main():
     # Letting the user know the device is operational, especially useful for headless operation
     sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
 
-    # Setting the next minute
-    nextMin = getNextMin(time.localtime().tm_min);
-
     # Setting the next hour
     nextHour = getNextHour();
 
-    # Setting the next five minutes
-    nextFiveMin = minutesFromNow(5);
-    print(nextFiveMin);
+    # Changing values every minute
+    nextMin = getNextMin(time.localtime().tm_min);
+    newMin = False;
 
     # Infinite loop to constantly check for required actions
     while True:
-        # Checking the preset text file every minute
-        if PRESET_MODE and str(time.localtime().tm_min) == str(nextMin):
+        # Checking and changing values every minute
+        if (str(time.localtime().tm_min) == str(nextMin)):
+            nextMin = getNextMin(time.localtime().tm_min);
+            newMin = True;
+
+        # Checking the preset text file every minute, if applicable
+        if PRESET_MODE and newMin:
+            print('Checking preset_' + str(PRESET) + ' file...');
             nextMin = getNextMin(time.localtime().tm_min);
             checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
 
-        # Running our auto algorithm
+        # Running our auto algorithm, if applicable
         if AUTO_MODE and str(time.localtime().tm_hour) == str(nextHour):
             nextHour = getNextHour();
             simpleAlgorithm();
 
-        # Appending time and temperature to a file every ten minutes
-        if str(time.localtime().tm_min) == str(nextFiveMin):
-            nextFiveMin = minutesFromNow(5);
-            print(nextFiveMin);
-            print('writing stuff to file');
+        # Appending time and temperature to a file every six minutes
+        if newMin and time.localtime().tm_min % 6 == 0:
+            hour = time.strftime('%H');
+            minute = int(time.strftime('%M')) / 6;
+            appendToLogFile('log.txt', 'a', str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + '\n');
+            print('New log... [' + str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + ']')
+
+        # Gathering 24 hour weather prediction at midnight (11:55pm) every day
+        if newMin and str(time.strftime('%H:%M')) == str('18:35'):
+            currHour = 0;
+            appendToLogFile('predictions.txt', 'w', '');
+            predictions = get24HrTemperatures(_STATE, _CITY);  # Obtaining predictions for the next 24 hours
+            for prediction in predictions:  # Appending predictions into a text file
+                appendToLogFile('predictions.txt', 'a', (str(currHour)) + '.0' + ', ' + str(prediction) + '\n');
+                currHour += 1;
+            print('New predictions saved...');
 
         # Creating a session and then checking for new emails
         session = imaplib.IMAP4_SSL('imap.gmail.com');
@@ -108,6 +122,8 @@ def main():
         if emails != False:
             readEmails(session, emails);
             session.close();
+
+        newMin = False; # Wait until next minute
 
 # Method for sending an email to a user
 def sendEmail(recpient, subject, content):
@@ -261,6 +277,10 @@ def requestDataHandler(content):
         sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
     elif actions[0] == 'MAX_MCP_VALUE':
         sendEmail(mrWindowEmail, str(MAX_MCP_VALUE), 'Da max mcp value info 4 u');
+    elif actions[0] == 'MODE':
+        mode = checkMode();
+        sendEmail(mrWindowEmail, 'MODE:' + str(mode), 'Da mode 4 u');
+        print('Requesting mode... [' + mode + ']')
     else:
         print('Incorrect data request...');
 
@@ -332,6 +352,8 @@ def requestActionNowHandler(content):
             PRESET_MODE = True;
         else:
             print('Incorrect mode type...');
+
+        print('Setting mode... [' + checkMode() + ']')
     else:
         print('Incorrect action now request...');
 
@@ -608,5 +630,23 @@ def simpleAlgorithm():
         else:
             print('Closing window');
             closeWindow(100);
+
+# Method for checking the current mode
+# Returns either MANUAL, AUTO, or PRESET
+def checkMode():
+    mode = 'MANUAL';
+
+    if (PRESET_MODE):
+        mode = 'PRESET';
+    elif (AUTO_MODE):
+        mode = 'AUTO';
+
+    return mode;
+
+# Method for opening the log file and appending to it
+def appendToLogFile(filename, modifier, contentToAdd):
+    file_object = open(filename, modifier); # Appending to an existing file
+    file_object.write(contentToAdd);
+    file_object.close();
 
 main(); # Call to main method so that it runs first
