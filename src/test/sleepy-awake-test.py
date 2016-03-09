@@ -58,12 +58,13 @@ WINDOW_POSITION     = 0;        # Position of the window, relative to openness
 MAX_MCP_VALUE       = 300;      # Max MCP value that the physical window can open
                                 # 0 = 100% open
 BLINDS_POSITION     = 0;        # Similar to WINDOW_POSITION
-TEMPERATURE         = 73.0;     # Current inside temperature
+TEMPERATURE         = 0.0;      # Current inside temperature
                                 # Temperature will be in Fahrenheit
 HOURLY_OUTSIDE_TEMP = [];       # 24 hour temperature predictions
 LIGHT_LEVEL         = 0;        # Still deciding on units
 PRESET              = 1;        # The current preset
-DESIRED_TEMP        = 0.0;      # The user's desired temperature
+DESIRED_TEMP        = 73.0;     # The user's desired temperature
+                                # Defaults to 73.0
 MANUAL_MODE         = True;     # Defaults to true
 AUTO_MODE           = False;    # Defaults to false
 PRESET_MODE         = False;    # Defaults to false
@@ -280,7 +281,16 @@ def requestDataHandler(content):
     elif actions[0] == 'MODE':
         mode = checkMode();
         sendEmail(mrWindowEmail, 'MODE:' + str(mode), 'Da mode 4 u');
-        print('Requesting mode... [' + mode + ']')
+        print('Requesting mode... [' + mode + ']');
+    elif actions[0] == 'GRAPH_DATA':
+        body = 'PREDICTIONS:\n';
+        body += writeFromFile('predictions');
+        body += 'DESIRED_TEMP:\n';
+        body += str(DESIRED_TEMP) + '\n';
+        body += 'LOG:\n';
+        body += writeFromFile('log');
+        sendEmail(mrWindowEmail, 'RESPONSE=GRAPH_DATA', body);
+        print('Requesting graph data... [RESPONSE SENT]')
     else:
         print('Incorrect data request...');
 
@@ -522,6 +532,15 @@ def checkPresetFile(hour, minute):
                 requestActionNowHandler(actions[1] + ', ' + actions[2]);
             else:
                 requestActionNowHandler(actions[1]);
+
+# Method for writing information from a text file
+def writeFromFile(fileName):
+    file_object = open(fileName + '.txt', 'r'); # Reading an existing file
+    data = '';
+    for line in file_object:
+        data += line;
+
+    return data;
 
 # Method for reading a specified channel of the MCP
 # Returns the data as an integer
