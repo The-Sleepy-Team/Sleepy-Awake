@@ -68,7 +68,8 @@ DESIRED_TEMP        = 73.0;     # The user's desired temperature
 MANUAL_MODE         = True;     # Defaults to true
 AUTO_MODE           = False;    # Defaults to false
 PRESET_MODE         = False;    # Defaults to false
-AUTO_BLINDS_MODE    = True;    # Defaults to false
+BLINDS_MANUAL_MODE  = True;     # Defaults to true
+BLINDS_AUTO_MODE    = False;    # Defaults to false
 
 # Main method of the program which will run first when file is executed
 def main():
@@ -119,7 +120,8 @@ def main():
             print('New predictions saved...');
 
         # Running the auto blinds algorithm, if applicable
-        if AUTO_BLINDS_MODE and newMin and (str(time.strftime('%H:%M')) == str('21:34') or str(time.strftime('%H:%M')) == str('21:35')):
+        # Currently opening blinds at 8am and closing them at 6pm
+        if BLINDS_AUTO_MODE and newMin and (str(time.strftime('%H:%M')) == str('8:00') or str(time.strftime('%H:%M')) == str('18:00')):
             blindsAutoAlgorithm();
 
         # Creating a session and then checking for new emails
@@ -295,8 +297,12 @@ def requestDataHandler(content):
         body += str(DESIRED_TEMP) + '\n';
         body += 'LOG:\n';
         body += writeFromFile('log');
-        sendEmail(mrWindowEmail, 'RESPONSE=GRAPH_DATA', body);
-        print('Requesting graph data... [RESPONSE SENT]')
+        sendEmail(mrWindowEmail, 'GRAPH_DATA', body);
+        print('Requesting graph data... [RESPONSE SENT]');
+    elif actions[0] == 'BLINDS_MODE':
+        body = checkBlindsMode();
+        sendEmail(mrWindowEmail, 'BLINDS_MODE', body);
+        print('Requesting blinds mode... [RESPONSE SENT]');
     else:
         print('Incorrect data request...');
 
@@ -371,6 +377,20 @@ def requestActionNowHandler(content):
             print('Incorrect mode type...');
 
         print('Setting mode... [' + checkMode() + ']')
+    elif actions[0] == 'SET_BLINDS_MODE':
+        global BLINDS_AUTO_MODE;
+        global BLINDS_MANUAL_MODE;
+
+        if actions[1] == 'MANUAL':
+            BLINDS_MANUAL_MODE = True;
+            BLINDS_AUTO_MODE = False;
+        elif actions[1] == 'AUTO':
+            BLINDS_MANUAL_MODE = False;
+            BLINDS_AUTO_MODE = True;
+        else:
+            print('Incorrect blinds mode type...');
+
+        print('Setting blinds mode... [' + checkBlindsMode() + ']');
     else:
         print('Incorrect action now request...');
 
@@ -665,6 +685,16 @@ def checkMode():
     if (PRESET_MODE):
         mode = 'PRESET';
     elif (AUTO_MODE):
+        mode = 'AUTO';
+
+    return mode;
+
+# Method for checking the current blinds mode
+# Returns either MANUAL or AUTO
+def checkBlindsMode():
+    mode = 'MANUAL';
+
+    if (BLINDS_AUTO_MODE):
         mode = 'AUTO';
 
     return mode;
