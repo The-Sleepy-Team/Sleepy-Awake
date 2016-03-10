@@ -284,7 +284,11 @@ def requestDataHandler(content):
     elif actions[0] == 'TEMPERATURE':
         body = str(float(retrieveEnOceanState('STM')) * 1.8 + 32);
         sendEmail(mrWindowEmail, 'TEMPERATURE', body);
-        print('Requesting temperature... [RESPONSE: ' + body + ']')
+        print('Requesting temperature... [RESPONSE: ' + body + ']');
+    elif actions[0] == 'DESIRED_TEMP':
+        body = str(DESIRED_TEMP);
+        sendEmail(mrWindowEmail, 'DESIRED_TEMP', body);
+        print('Requesting desired temperature... [RESPONSE: ' + body + ']');
     elif actions[0] == 'LIGHT_LEVEL':
         body = str(ReadChannel(1));
         sendEmail(mrWindowEmail, 'LIGHT_LEVEL', body);
