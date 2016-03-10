@@ -111,7 +111,7 @@ def main():
             print('New log... [' + str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + ']')
 
         # Gathering 24 hour weather prediction at midnight (11:55pm) every day
-        if newMin and str(time.strftime('%H:%M')) == str('18:35'):
+        if newMin and str(time.strftime('%H:%M')) == str('23:55'):
             currHour = 0;
             appendToLogFile('predictions.txt', 'w', '');
             predictions = get24HrTemperatures(_STATE, _CITY);  # Obtaining predictions for the next 24 hours
