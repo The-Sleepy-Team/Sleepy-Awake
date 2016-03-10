@@ -49,9 +49,9 @@ p = GPIO.PWM(16, 20000);    # 20kHz
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
 rPiEmailPW          = '123abc123ABC';
-mrWindowEmail       = 'sleepymrwindow@gmail.com';   
+mrWindowEmail       = 'sleepymrwindow@gmail.com';
 _STATE              = 'CA';
-_CITY               = 'Irvine'; 
+_CITY               = 'Irvine';
 WINDOW_POSITION     = 0;        # Position of the window, relative to openness
                                 # Can take on any percentages (eg. 10% = 10, 75% = 75)
                                 # 100 = 100% opened
@@ -74,7 +74,8 @@ BLINDS_AUTO_MODE    = False;    # Defaults to false
 # Main method of the program which will run first when file is executed
 def main():
     # Letting the user know the device is operational, especially useful for headless operation
-    sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
+    # sendEmail('4084669915@txt.att.net', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
+    sendEmail('trandl1@uci.edu', 'Raspberry Pi Connection', 'Raspberry Pi operating!'); # Temporary removing this because of annoyance
     print('Program operating...');
 
     # Setting the next hour
@@ -273,23 +274,33 @@ def requestDataHandler(content):
     actions = removeWhitespaces(actions);
 
     if actions[0] == 'WINDOW_POSITION':
-        sendEmail(mrWindowEmail, str(WINDOW_POSITION), 'Da window position info 4 u');
+        body = str(WINDOW_POSITION);
+        sendEmail(mrWindowEmail, 'WINDOW_POSITION', body);
+        print('Requesting window position... [RESPONSE: ' + body + ']');
     elif actions[0] == 'BLINDS_POSITION':
-        sendEmail(mrWindowEmail, str(BLINDS_POSITION), 'Da blinds position info 4 u');
+        body = str(BLINDS_POSITION);
+        sendEmail(mrWindowEmail, 'BLINDS_POSITION', body);
+        print('Requesting blinds position... [RESPONSE: ' + body + ']');
     elif actions[0] == 'TEMPERATURE':
-        TEMPERATURE = float(retrieveEnOceanState('STM')) * 1.8 + 32;
-        sendEmail(mrWindowEmail, str(TEMPERATURE), 'Da temperature info 4 u');
+        body = str(float(retrieveEnOceanState('STM')) * 1.8 + 32);
+        sendEmail(mrWindowEmail, 'TEMPERATURE', body);
+        print('Requesting temperature... [RESPONSE: ' + body + ']')
     elif actions[0] == 'LIGHT_LEVEL':
-        LIGHT_LEVEL = ReadChannel(1);
-        sendEmail(mrWindowEmail, str(LIGHT_LEVEL), 'Da light level info 4 u');
+        body = str(ReadChannel(1));
+        sendEmail(mrWindowEmail, 'LIGHT_LEVEL', body);
+        print('Requesting light level... [RESPONSE: ' + body + ']');
     elif actions[0] == 'PRESET':
-        sendEmail(mrWindowEmail, str(PRESET), 'Da current preset info 4 u');
+        body = str(PRESET);
+        sendEmail(mrWindowEmail, 'PRESET', body);
+        print('Requesting current preset... [RESPONSE: ' + body + ']')
     elif actions[0] == 'MAX_MCP_VALUE':
-        sendEmail(mrWindowEmail, str(MAX_MCP_VALUE), 'Da max mcp value info 4 u');
+        body = str(MAX_MCP_VALUE);
+        sendEmail(mrWindowEmail, 'MAX_MCP_VALUE', body);
+        print('Requesting maximum MCP value... [RESPONSE: ' + body + ']');
     elif actions[0] == 'MODE':
-        mode = checkMode();
-        sendEmail(mrWindowEmail, 'MODE:' + str(mode), 'Da mode 4 u');
-        print('Requesting mode... [' + mode + ']');
+        body = str(checkMode());
+        sendEmail(mrWindowEmail, 'MODE', body);
+        print('Requesting mode... [' + body + ']');
     elif actions[0] == 'GRAPH_DATA':
         body = 'PREDICTIONS:\n';
         body += writeFromFile('predictions');
@@ -302,9 +313,9 @@ def requestDataHandler(content):
     elif actions[0] == 'BLINDS_MODE':
         body = checkBlindsMode();
         sendEmail(mrWindowEmail, 'BLINDS_MODE', body);
-        print('Requesting blinds mode... [RESPONSE SENT]');
+        print('Requesting blinds mode... [RESPONSE: ' + body + ']');
     else:
-        print('Incorrect data request...');
+        print('Incorrect data request... [REQ: ' + actions[0] + ']');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
@@ -359,7 +370,7 @@ def requestActionNowHandler(content):
     elif actions[0] == 'SET_MODE':
         global MANUAL_MODE;
         global AUTO_MODE;
-        global PRESET_MODE; 
+        global PRESET_MODE;
 
         if actions[1] == 'MANUAL':
             MANUAL_MODE = True;
