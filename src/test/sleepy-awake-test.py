@@ -680,24 +680,20 @@ def simpleAlgorithm():
     insideTemp = float(retrieveEnOceanState('STM')) * 1.8 + 32;
     outsideTemp = getCurrentTemperature(_STATE, _CITY);
 
-    if insideTemp > DESIRED_TEMP:
-        if outsideTemp < insideTemp:
-            print('Opening window...');
-            openWindow(100);
-        else:
-            print('Closing window');
-            closeWindow(100);
-    elif insideTemp < DESIRED_TEMP:
-        if outsideTemp > insideTemp:
-            print('Opening window...');
-            openWindow(100);
-        else:
-            print('Closing window');
-            closeWindow(100);
-
     print('Inside temperature: ' + str(insideTemp));
     print('Outside temperature: ' + str(outsideTemp));
     print('Desired temperature: ' + str(DESIRED_TEMP));
+
+    if insideTemp > DESIRED_TEMP:
+        if outsideTemp < insideTemp:
+            openWindow(100);
+        else:
+            closeWindow(100);
+    elif insideTemp < DESIRED_TEMP:
+        if outsideTemp > insideTemp:
+            openWindow(100);
+        else:
+            closeWindow(100);
 
 # Method for checking the current mode
 # Returns either MANUAL, AUTO, or PRESET
