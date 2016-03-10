@@ -695,6 +695,10 @@ def simpleAlgorithm():
             print('Closing window');
             closeWindow(100);
 
+    print('Inside temperature: ' + str(insideTemp));
+    print('Outside temperature: ' + str(outsideTemp));
+    print('Desired temperature: ' + str(DESIRED_TEMP));
+
 # Method for checking the current mode
 # Returns either MANUAL, AUTO, or PRESET
 def checkMode():
