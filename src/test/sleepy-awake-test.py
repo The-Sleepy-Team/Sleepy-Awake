@@ -442,9 +442,7 @@ def requestActionLaterHandler(content):
     elif actions[0] == 'BLINDS_CLOSE_POSITION':
         appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
     else:
-        print('Incorrect action later request...');
-
-    print('Added new instruction to preset ' + str(PRESET) + ': ' + content);
+        print('Incorrect action later request... [REQUEST: ' + actions[0] + ']');
 
 # Method for removing all whitespace characters from a list
 # Returns the list with removed whitespace characters
@@ -552,6 +550,7 @@ def appendToPresetFile(contentToAdd):
     file_object = open('preset_' + str(PRESET) + '.txt', 'a'); # Appending to an existing file
     file_object.write(contentToAdd);
     file_object.close();
+    print('Added new instruction to preset ' + str(PRESET) + ': ' + contentToAdd);
 
 # Method for checking a preset file for timed events
 def checkPresetFile(hour, minute):
