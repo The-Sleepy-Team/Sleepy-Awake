@@ -84,6 +84,8 @@ def main():
     # Changing values every minute
     nextMin = getNextMin(time.localtime().tm_min);
     newMin = False;
+    nextSec = getNextSec();
+    newSec = False;
 
     # Infinite loop to constantly check for required actions
     while True:
@@ -91,6 +93,11 @@ def main():
         if (str(time.localtime().tm_min) == str(nextMin)):
             nextMin = getNextMin(time.localtime().tm_min);
             newMin = True;
+
+        # Checking and changing values every second
+        if (str(time.localtime().tm_sec) == str(nextSec)):
+            nextSec = getNextSec();
+            newSec = True;
 
         # Checking the preset text file every minute, if applicable
         if PRESET_MODE and newMin:
@@ -125,15 +132,17 @@ def main():
         if BLINDS_AUTO_MODE and newMin and (str(time.strftime('%H:%M')) == str('8:00') or str(time.strftime('%H:%M')) == str('18:00')):
             blindsAutoAlgorithm();
 
-        # Creating a session and then checking for new emails
-        session = imaplib.IMAP4_SSL('imap.gmail.com');
-        emails = checkForEmails(session);
-        # If new emails exist, read and parse them and then close the session
-        if emails != False:
-            readEmails(session, emails);
-            session.close();
+        # Creating a session and then checking for new emails every 2 seconds
+        if (newSec and time.localtime().tm_sec % 2 == 0):
+            session = imaplib.IMAP4_SSL('imap.gmail.com');
+            emails = checkForEmails(session);
+            # If new emails exist, read and parse them and then close the session
+            if emails != False:
+                readEmails(session, emails);
+                session.close();
 
         newMin = False; # Wait until next minute
+        newSec = False; # Wait until next second
 
 # Method for sending an email to a user
 def sendEmail(recpient, subject, content):
@@ -525,6 +534,14 @@ def getNextMin(minute):
         return 0;
 
     return minute + 1;
+
+# Method for getting the next second based on the current timed
+# Returns the next second as an integer
+def getNextSec():
+    if time.localtime().tm_sec == 59:
+        return 0;
+
+    return time.localtime().tm_sec + 1;
 
 # Method for getting the number of minutes from a variable amount
 # Returns that amount
