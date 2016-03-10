@@ -300,7 +300,7 @@ def requestDataHandler(content):
     elif actions[0] == 'MODE':
         body = str(checkMode());
         sendEmail(mrWindowEmail, 'MODE', body);
-        print('Requesting mode... [' + body + ']');
+        print('Requesting mode... [RESPONSE: ' + body + ']');
     elif actions[0] == 'GRAPH_DATA':
         body = 'PREDICTIONS:\n';
         body += writeFromFile('predictions');
@@ -315,7 +315,7 @@ def requestDataHandler(content):
         sendEmail(mrWindowEmail, 'BLINDS_MODE', body);
         print('Requesting blinds mode... [RESPONSE: ' + body + ']');
     else:
-        print('Incorrect data request... [REQ: ' + actions[0] + ']');
+        print('Incorrect data request... [REQUEST: ' + actions[0] + ']');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionNowHandler(content):
@@ -356,16 +356,20 @@ def requestActionNowHandler(content):
         global MAX_MCP_VALUE;
         value = ReadChannel(0);
         MAX_MCP_VALUE = value;
+        print('Setting max MCP value... [REQUEST: ' + str(MAX_MCP_VALUE) + ']')
     elif actions[0] == 'SET_DESIRED_TEMP':
         global DESIRED_TEMP;
         DESIRED_TEMP = float(actions[1]);
-        print('Requesting desired temperature change... [' + str(DESIRED_TEMP) + ']');
+        print('Setting desired temperature ... [REQUEST: ' + str(DESIRED_TEMP) + ']');
     elif actions[0] == 'SET_STATE':
         global _STATE;
         _STATE = actions[1];
+        print('Setting state... [REQUEST: ' + str(_STATE) + ']');
+        print('Waiting on city to be set...');
     elif actions[0] == 'SET_CITY':
         global _CITY;
         _CITY = actions[1];
+        print('Setting city... [REQUEST: ' + str(_CITY) + ']')
         checkValidLocation(_STATE, _CITY);
     elif actions[0] == 'SET_MODE':
         global MANUAL_MODE;
@@ -385,9 +389,9 @@ def requestActionNowHandler(content):
             AUTO_MODE = False;
             PRESET_MODE = True;
         else:
-            print('Incorrect mode type...');
+            print('Incorrect mode type... [REQUEST: ' + actions[1] + ']');
 
-        print('Setting mode... [' + checkMode() + ']')
+        print('Setting mode... [REQUEST: ' + checkMode() + ']')
     elif actions[0] == 'SET_BLINDS_MODE':
         global BLINDS_AUTO_MODE;
         global BLINDS_MANUAL_MODE;
@@ -399,11 +403,11 @@ def requestActionNowHandler(content):
             BLINDS_MANUAL_MODE = False;
             BLINDS_AUTO_MODE = True;
         else:
-            print('Incorrect blinds mode type...');
+            print('Incorrect blinds mode type... [REQUEST: ' + actions[1] + ']');
 
-        print('Setting blinds mode... [' + checkBlindsMode() + ']');
+        print('Setting blinds mode... [REQUEST: ' + checkBlindsMode() + ']');
     else:
-        print('Incorrect action now request...');
+        print('Incorrect action now request... [REQUEST: ' + actions[0] + ']');
 
 # Method for determining which event takes place for a REQUEST_ACTION_NOW request type
 def requestActionLaterHandler(content):
@@ -611,9 +615,9 @@ def checkValidLocation(state, city):
     _CITY = 'Irvine';
 
     # Sending an email to the Android application to notify of the invalid state / city combination
-    sendEmail(mrWindowEmail, 'Invalid state / city combination', 'try harder yo');
+    sendEmail(mrWindowEmail, 'INVALID_STATE_CITY', str(state) + ' / ' + str(city));
 
-    print('An invalid state / city combination was entered, defaulting to CA / Irvine...');
+    print('An invalid state / city combination [' + str(state) + ' / ' + str(city) + '] was entered, defaulting to CA / Irvine... [RESPONSE SENT]');
 
     return False;
 
