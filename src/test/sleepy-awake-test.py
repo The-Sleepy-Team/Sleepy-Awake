@@ -507,6 +507,16 @@ def positionWindow(percentage):
     global WINDOW_POSITION;
     WINDOW_POSITION = percentage;
 
+    # Checking if the wires are unplugged
+    testValues = [];
+    for i in range(0, 5):
+        print(ReadChannel(0));
+        testValues.append(ReadChannel(0));
+    for j in range(0, 4):
+        if testValues[j] != testValues[j + 1] and testValues[j] - 1 != testValues[j + 1] and testValues[j] + 1 != testValues[j + 1]:
+            print('Potentiometer of linear actuator disconnected, did not accept action...');
+            return False;
+
     print('Positioning window to ' + str(percentage) + '%...');
 
     desiredPosition = MAX_MCP_VALUE * (percentage / 100);
@@ -730,14 +740,18 @@ def simpleAlgorithm():
 
     if insideTemp > DESIRED_TEMP:
         if outsideTemp < insideTemp:
-            openWindow(100);
+            # openWindow(100);
+            positionWindow(100);
         else:
-            closeWindow(100);
+            # closeWindow(100);
+            positionWindow(0);
     elif insideTemp < DESIRED_TEMP:
         if outsideTemp > insideTemp:
-            openWindow(100);
+            # openWindow(100);
+            positionWindow(100);
         else:
-            closeWindow(100);
+            # closeWindow(100);
+            positionWindow(0);
 
 # Method for checking the current mode
 # Returns either MANUAL, AUTO, or PRESET
