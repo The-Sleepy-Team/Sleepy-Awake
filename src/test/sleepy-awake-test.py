@@ -112,6 +112,7 @@ def main():
         #     simpleAlgorithm();
 
         if AUTO_MODE and newMin:
+            print('Checking predictiveSchedule file...');
             checkPresetFile('predictiveSchedule.txt', time.localtime().tm_hour, time.localtime().tm_min);
 
         # Appending time and temperature to a file every six minutes
@@ -119,6 +120,8 @@ def main():
             hour = time.strftime('%H');
             minute = int(time.strftime('%M')) / 6;
             appendToLogFile('log.txt', 'a', str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + '\n');
+            if time.strftime('%H:%M') == str('00:00'):
+                appendToLogFile('log.txt', 'w', '');
             # print('New log... [' + str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + ']')
 
         # Gathering 24 hour weather prediction at midnight (11:55pm) every day
