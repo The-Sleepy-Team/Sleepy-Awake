@@ -339,34 +339,34 @@ def requestActionNowHandler(content):
     # Removing all whitespace characters from the actions
     actions = removeWhitespaces(actions);
 
-    if actions[0] == 'WINDOW_OPEN':
-        # if WINDOW_POSITION < 100:
-            openWindow(100);
-    elif actions[0] == 'WINDOW_CLOSE':
-        # if WINDOW_POSITION > 0:
-            closeWindow(100);
-    elif actions[0] == 'WINDOW_OPEN_POSITION':
-        # if WINDOW_POSITION < float(actions[1]):
-            openWindow(float(actions[1]));
-    elif actions[0] == 'WINDOW_CLOSE_POSITION':
-        # if WINDOW_POSITION > float(actions[1]):
-            closeWindow(float(actions[1]));
-    elif actions[0] == 'WINDOW_POSITION':
+    # if actions[0] == 'WINDOW_OPEN':
+    #     # if WINDOW_POSITION < 100:
+    #         openWindow(100);
+    # elif actions[0] == 'WINDOW_CLOSE':
+    #     # if WINDOW_POSITION > 0:
+    #         closeWindow(100);
+    # elif actions[0] == 'WINDOW_OPEN_POSITION':
+    #     # if WINDOW_POSITION < float(actions[1]):
+    #         openWindow(float(actions[1]));
+    # elif actions[0] == 'WINDOW_CLOSE_POSITION':
+    #     # if WINDOW_POSITION > float(actions[1]):
+    #         closeWindow(float(actions[1]));
+    if actions[0] == 'WINDOW_POSITION':
         positionWindow(float(actions[1]));
     elif actions[0] == 'BLINDS_POSITION':
         positionBlinds(float(actions[1]));
-    elif actions[0] == 'BLINDS_OPEN':
-        # if BLINDS_POSITION < 100:
-            openBlinds(100);
-    elif actions[0] == 'BLINDS_CLOSE':
-        # if BLINDS_POSITION > 0:
-            closeBlinds(0);
-    elif actions[0] == 'BLINDS_OPEN_POSITION':
-        # if BLINDS_POSITION < float(actions[1]):
-            openBlinds(float(actions[1]));
-    elif actions[0] == 'BLINDS_CLOSE_POSITION':
-        # if BLINDS_POSITION > float(actions[1]):
-            closeBlinds(float(actions[1]));
+    # elif actions[0] == 'BLINDS_OPEN':
+    #     # if BLINDS_POSITION < 100:
+    #         openBlinds(100);
+    # elif actions[0] == 'BLINDS_CLOSE':
+    #     # if BLINDS_POSITION > 0:
+    #         closeBlinds(0);
+    # elif actions[0] == 'BLINDS_OPEN_POSITION':
+    #     # if BLINDS_POSITION < float(actions[1]):
+    #         openBlinds(float(actions[1]));
+    # elif actions[0] == 'BLINDS_CLOSE_POSITION':
+    #     # if BLINDS_POSITION > float(actions[1]):
+    #         closeBlinds(float(actions[1]));
     elif actions[0] == 'PRESET_CHANGE':
         if PRESET != int(actions[1]):
             changePreset(int(actions[1]));
@@ -467,41 +467,41 @@ def removeWhitespaces(listContent):
         i = i + 1;
     return listContent;
 
-# Method for opening the window
-def openWindow(percentage):
-    # Changing global variables
-    global WINDOW_POSITION;
-
-    print('Opening window to ' + str(percentage) + '%...');
-    WINDOW_POSITION = percentage;
-
-    GPIO.output(11, 0); # 0 to open
-
-    openTo = (1023 - (1023 - MAX_MCP_VALUE)) * (percentage/100);
-    print(openTo);
-
-    while int(ReadChannel(0)) < int(openTo):
-        p1.start(100);
-
-    p1.stop();           # Stopping the operation of the linear actuator
-
-# Method for closing the window
-def closeWindow(percentage):
-    # Changing global variables
-    global WINDOW_POSITION;
-
-    print('Closing window to ' + str(percentage) + '%...');
-    WINDOW_POSITION = 100 - percentage;
-
-    GPIO.output(11, 1);	# 1 to close
-
-    # closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) - MAX_MCP_VALUE;
-    closeTo = MAX_MCP_VALUE * (percentage / 100) - MAX_MCP_VALUE;
-
-    while int(ReadChannel(0)) >= int(closeTo) + 4:
-        p1.start(100);
-
-    p1.stop();           # Stopping the operation of the linear actuator
+# # Method for opening the window
+# def openWindow(percentage):
+#     # Changing global variables
+#     global WINDOW_POSITION;
+#
+#     print('Opening window to ' + str(percentage) + '%...');
+#     WINDOW_POSITION = percentage;
+#
+#     GPIO.output(11, 0); # 0 to open
+#
+#     openTo = (1023 - (1023 - MAX_MCP_VALUE)) * (percentage/100);
+#     print(openTo);
+#
+#     while int(ReadChannel(0)) < int(openTo):
+#         p1.start(100);
+#
+#     p1.stop();           # Stopping the operation of the linear actuator
+#
+# # Method for closing the window
+# def closeWindow(percentage):
+#     # Changing global variables
+#     global WINDOW_POSITION;
+#
+#     print('Closing window to ' + str(percentage) + '%...');
+#     WINDOW_POSITION = 100 - percentage;
+#
+#     GPIO.output(11, 1);	# 1 to close
+#
+#     # closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) - MAX_MCP_VALUE;
+#     closeTo = MAX_MCP_VALUE * (percentage / 100) - MAX_MCP_VALUE;
+#
+#     while int(ReadChannel(0)) >= int(closeTo) + 4:
+#         p1.start(100);
+#
+#     p1.stop();           # Stopping the operation of the linear actuator
 
 # Method for positioning the window
 def positionWindow(percentage):
@@ -580,21 +580,21 @@ def positionBlinds(percentage):
     time.sleep(desiredTime);
     p2.stop();
 
-# Method for opening the blinds
-def openBlinds(percentage):
-    # Changing global bariavles
-    global BLINDS_POSITION;
-
-    print('Opening blinds to ' + str(percentage) + '%...');
-    BLINDS_POSITION = percentage;
-
-# Method for closing the blinds
-def closeBlinds(percentage):
-    # Changing global variables
-    global BLINDS_POSITION;
-
-    print('Closing blinds to ' + str(percentage) + '%...');
-    BLINDS_POSITION = percentage;
+# # Method for opening the blinds
+# def openBlinds(percentage):
+#     # Changing global bariavles
+#     global BLINDS_POSITION;
+#
+#     print('Opening blinds to ' + str(percentage) + '%...');
+#     BLINDS_POSITION = percentage;
+#
+# # Method for closing the blinds
+# def closeBlinds(percentage):
+#     # Changing global variables
+#     global BLINDS_POSITION;
+#
+#     print('Closing blinds to ' + str(percentage) + '%...');
+#     BLINDS_POSITION = percentage;
 
 # Method for changing the current preset
 def changePreset(preset):
