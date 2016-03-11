@@ -11,15 +11,18 @@ import RPi.GPIO as GPIO
 import time
 
 GPIO.setmode(GPIO.BOARD);	# Setting up GPIO pins
-GPIO.setup(11, GPIO.OUT);   # GPIO pin 17
-GPIO.setup(13, GPIO.OUT);   # GPIO pin 27
-GPIO.output(11, 0);	# 0 to open, 1 to close
-p = GPIO.PWM(13, 20000);
+GPIO.setup(16, GPIO.OUT);   # GPIO pin 17
+GPIO.setup(18, GPIO.OUT);   # GPIO pin 27
+GPIO.output(16, 0);	# 0 to open, 1 to close
+p = GPIO.PWM(18, 20000);
 
 def main():
     print(time.localtime().tm_sec);
-    motorTimer(5);
+    # motorTimer(1);
     print(time.localtime().tm_sec);
+    p.start(100);
+    time.sleep(0.1);
+    p.stop();
 
 def motorTimer(desiredElapsedTime):
     for iteration in range (0, desiredElapsedTime):

@@ -44,7 +44,7 @@ GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
 GPIO.setup(18, GPIO.OUT);   # To have the motor spin
                             # GPIO pin 24
 p1 = GPIO.PWM(13, 20000);    # 20kHz
-p2 = GPIO.PWM(16, 20000);    # 20kHz
+p2 = GPIO.PWM(18, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -353,6 +353,8 @@ def requestActionNowHandler(content):
             closeWindow(float(actions[1]));
     elif actions[0] == 'WINDOW_POSITION':
         positionWindow(float(actions[1]));
+    elif actions[0] == 'BLINDS_POSITION':
+        positionBlinds(float(actions[1]));
     elif actions[0] == 'BLINDS_OPEN':
         # if BLINDS_POSITION < 100:
             openBlinds(100);
@@ -505,18 +507,22 @@ def closeWindow(percentage):
 def positionWindow(percentage):
     # Changing global variables
     global WINDOW_POSITION;
-    WINDOW_POSITION = percentage;
+
+    # Checking for correct percentage
+    if percentage < 0 or percentage > 100:
+        print('Invalid window position... [REQUEST: ' + percentage + ']');
+        return False;
 
     # Checking if the wires are unplugged
     testValues = [];
     for i in range(0, 5):
-        print(ReadChannel(0));
         testValues.append(ReadChannel(0));
     for j in range(0, 4):
-        if testValues[j] != testValues[j + 1] and testValues[j] - 1 != testValues[j + 1] and testValues[j] + 1 != testValues[j + 1]:
+        if testValues[j] != testValues[j + 1] and testValues[j] - 1 != testValues[j + 1] and testValues[j] - 2 != testValues[j + 1] and testValues[j] - 3 != testValues[j + 1] and testValues[j] + 1 != testValues[j + 1] and testValues[j] + 2 != testValues[j + 1] and testValues[j] + 3 != testValues[j + 1]:
             print('Potentiometer of linear actuator disconnected, did not accept action...');
             return False;
 
+    WINDOW_POSITION = percentage;
     print('Positioning window to ' + str(percentage) + '%...');
 
     desiredPosition = MAX_MCP_VALUE * (percentage / 100);
@@ -532,6 +538,47 @@ def positionWindow(percentage):
             p1.start(100);
 
     p1.stop();  # Stopping the operation of the linear actuator
+
+# Method for positioning the blinds
+def positionBlinds(percentage):
+    # Changing global variable
+    global BLINDS_POSITION;
+
+    desiredPosition = percentage;
+
+    # Checking for correct percentage
+    if percentage < 0 or percentage > 100:
+        print('Invalid blinds position... [REQUEST: ' + percentage + ']');
+        return False;
+
+    print('Positioning blinds to ' + str(percentage) + '%...');
+
+    # Checking for boundaries
+    if percentage > BLINDS_POSITION:
+        # if BLINDS_POSITION + percentage > 100:
+        #     print('Invalid blinds position, trying to set past limits...');
+        #     return False;
+        percentage = percentage - BLINDS_POSITION;
+        GPIO.output(16, 0);	# 0 to open
+    elif percentage < BLINDS_POSITION:
+        # if BLINDS_POSITION - percentage < 0:
+        #     print('Invalid blinds position, trying to set past limits...');
+        #     return False;
+        percentage = BLINDS_POSITION - percentage;
+        GPIO.output(16, 1);	# 1 to close
+    else:
+        print('Setting blinds position to same position...');
+        return False;
+
+    BLINDS_POSITION = desiredPosition;
+
+    print('Moving ' + str(percentage) + '%...');
+
+    desiredTime = 2.5 * (percentage / 100);
+    print(desiredTime);
+    p2.start(100);
+    time.sleep(desiredTime);
+    p2.stop();
 
 # Method for opening the blinds
 def openBlinds(percentage):
