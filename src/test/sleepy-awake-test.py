@@ -103,20 +103,23 @@ def main():
         # Checking the preset text file every minute, if applicable
         if PRESET_MODE and newMin:
             print('Checking preset_' + str(PRESET) + ' file...');
-            nextMin = getNextMin(time.localtime().tm_min);
-            checkPresetFile(time.localtime().tm_hour, time.localtime().tm_min);
+            # nextMin = getNextMin(time.localtime().tm_min);
+            checkPresetFile('preset_' + str(PRESET) + '.txt', time.localtime().tm_hour, time.localtime().tm_min);
 
-        # Running our auto algorithm, if applicable
-        if AUTO_MODE and str(time.localtime().tm_hour) == str(nextHour):
-            nextHour = getNextHour();
-            simpleAlgorithm();
+        # # Running our auto algorithm, if applicable
+        # if AUTO_MODE and str(time.localtime().tm_hour) == str(nextHour):
+        #     nextHour = getNextHour();
+        #     simpleAlgorithm();
+
+        if AUTO_MODE and newMin:
+            checkPresetFile('predictiveSchedule.txt', time.localtime().tm_hour, time.localtime().tm_min);
 
         # Appending time and temperature to a file every six minutes
         if newMin and time.localtime().tm_min % 6 == 0:
             hour = time.strftime('%H');
             minute = int(time.strftime('%M')) / 6;
             appendToLogFile('log.txt', 'a', str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + '\n');
-            print('New log... [' + str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + ']')
+            # print('New log... [' + str(hour) + '.' + str(minute) + ', ' + str(float(retrieveEnOceanState('STM')) * 1.8 + 32) + ']')
 
         # Gathering 24 hour weather prediction at midnight (11:55pm) every day
         if newMin and str(time.strftime('%H:%M')) == str('23:55'):
@@ -127,6 +130,11 @@ def main():
                 appendToLogFile('predictions.txt', 'a', (str(currHour)) + '.0' + ', ' + str(prediction) + '\n');
                 currHour += 1;
             print('New predictions saved...');
+
+        # Running the predictive schedule creating algorithm at midnight (11:55pm) every day
+        if newMin and str(time.strftime('%H:%M')) == str('23:55'):
+            predictiveAlgorithm();
+            print('Predictive schedule created...');
 
         # Running the auto blinds algorithm, if applicable
         # Currently opening blinds at 8am and closing them at 6pm
@@ -439,21 +447,25 @@ def requestActionLaterHandler(content):
         file_object = open('preset_' + str(PRESET) + '.txt', 'w'); # Overwriting the old file, if it exists
         print('Created a new preset ' + str(PRESET) + ' text file...');
         file_object.close();
-    elif actions[0] == 'WINDOW_OPEN':
-        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
-    elif actions[0] == 'WINDOW_CLOSE':
-        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
-    elif actions[0] == 'WINDOW_OPEN_POSITION':
+    # elif actions[0] == 'WINDOW_OPEN':
+    #     appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    # elif actions[0] == 'WINDOW_CLOSE':
+    #     appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    # elif actions[0] == 'WINDOW_OPEN_POSITION':
+    #     appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    # elif actions[0] == 'WINDOW_CLOSE_POSITION':
+    #     appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    # elif actions[0] == 'BLINDS_OPEN':
+    #     appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    # elif actions[0] == 'BLINDS_CLOSE':
+    #     appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
+    # elif actions[0] == 'BLINDS_OPEN_POSITION':
+    #     appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    # elif actions[0] == 'BLINDS_CLOSE_POSITION':
+    #     appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
+    elif actions[0] == 'WINDOW_POSITION':
         appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
-    elif actions[0] == 'WINDOW_CLOSE_POSITION':
-        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
-    elif actions[0] == 'BLINDS_OPEN':
-        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
-    elif actions[0] == 'BLINDS_CLOSE':
-        appendToPresetFile(actions[1] + ', ' + actions[0] + '\n');
-    elif actions[0] == 'BLINDS_OPEN_POSITION':
-        appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
-    elif actions[0] == 'BLINDS_CLOSE_POSITION':
+    elif actions[0] == 'BLINDS_POSITION':
         appendToPresetFile(actions[2] + ', ' + actions[0] + ', ' + actions[1] + '\n');
     else:
         print('Incorrect action later request... [REQUEST: ' + actions[0] + ']');
@@ -572,10 +584,10 @@ def positionBlinds(percentage):
 
     BLINDS_POSITION = desiredPosition;
 
-    print('Moving ' + str(percentage) + '%...');
+    # print('Moving ' + str(percentage) + '%...');
 
     desiredTime = 2.5 * (percentage / 100);
-    print(desiredTime);
+    # print(desiredTime);
     p2.start(100);
     time.sleep(desiredTime);
     p2.stop();
@@ -654,8 +666,8 @@ def appendToPresetFile(contentToAdd):
     print('Added new instruction to preset ' + str(PRESET) + ': ' + contentToAdd);
 
 # Method for checking a preset file for timed events
-def checkPresetFile(hour, minute):
-    file_object = open('preset_' + str(PRESET) + '.txt', 'r'); # Reading an existing file
+def checkPresetFile(filename, hour, minute):
+    file_object = open(filename, 'r'); # Reading an existing file
     for line in file_object:
         # Splitting the actions up by commas
         actions = line.split(',');
@@ -827,12 +839,61 @@ def appendToLogFile(filename, modifier, contentToAdd):
     file_object = open(filename, modifier); # Appending to an existing file
     file_object.write(contentToAdd);
     file_object.close();
+    print('New log (' + filename + ')... [' + contentToAdd + ']')
 
 # Method for opening and closing the blinds at a specific time
 def blindsAutoAlgorithm():
     if BLINDS_POSITION > 0:
-        closeBlinds(0);
+        positionBlinds(0);
     else:
-        openBlinds(100);
+        positionBlinds(100);
+
+# Method for creating a predictive schedule for the day
+def predictiveAlgorithm():
+    high = 0;
+    highPos = 0;
+    low = 150;
+    lowPos = 0;
+    storedPredictions = [];
+    i = 0;
+    filename = 'predictiveSchedule.txt';
+
+    # Determining the highest temperature and lowest temperature and their positions
+    file_object = open('predictions.txt', 'r'); # Reading an existing file
+    for line in file_object:
+        predictions = line.split(',');
+        prediction = predictions[1].replace(' ', '');
+        prediction = prediction.replace('\n', '');
+        storedPredictions.append(prediction);
+        if int(prediction) > int(high):
+            high = prediction;
+            highPos = i;
+        if int(prediction) < int(low):
+            low = prediction;
+            lowPos = i;
+        i += 1;
+
+    if DESIRED_TEMP > high:
+        # Open window from 6am to 3pm
+        # Close window at 3pm
+        appendToLogFile(filename, 'w', '6:00, WINDOW_POSITION, 100\n');
+        appendToLogFile(filename, 'a', '15:00, WINDOW_POSITION, 0\n');
+    elif DESIRED_TEMP < low:
+        # Keep window closed until 4pm
+        # Open at 4pm
+        # Close at 6am next day
+        appendToLogFile(filename, 'w', '16:00, WINDOW_POSITION, 100\n');
+        appendToLogFile(filename, 'a', '6:00, WINDOW_POSITION, 0\n');
+    else:   # If desired temperature is in between the highest and lowest predicted temperatures
+        if abs(DESIRED_TEMP - high) > abs(DESIRED_TEMP - low):
+            # Open at 6pm
+            # Close at 9pm
+            appendToLogFile(filename, 'w', '18:00, WINDOW_POSITION, 100\n');
+            appendToLogFile(filename, 'a', '21:00, WINDOW_POSITION, 0\n');
+        else:
+            # Open at 9am
+            # Close at 12pm
+            appendToLogFile(filename, 'w', '9:00, WINDOW_POSITION, 100\n');
+            appendToLogFile(filename, 'a', '12:00, WINDOW_POSITION, 0\n');
 
 main(); # Call to main method so that it runs first
