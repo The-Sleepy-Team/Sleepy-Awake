@@ -43,8 +43,8 @@ GPIO.setup(16, GPIO.OUT);   # For the direction of the motor
                             # GPIO pin 23
 GPIO.setup(18, GPIO.OUT);   # To have the motor spin
                             # GPIO pin 24
-p = GPIO.PWM(13, 20000);    # 20kHz
-p = GPIO.PWM(16, 20000);    # 20kHz
+p1 = GPIO.PWM(13, 20000);    # 20kHz
+p2 = GPIO.PWM(16, 20000);    # 20kHz
 
 # Creating global variables
 rPiEmail            = 'sleepyraspberrypi@gmail.com';
@@ -55,8 +55,9 @@ _CITY               = 'Irvine';
 WINDOW_POSITION     = 0;        # Position of the window, relative to openness
                                 # Can take on any percentages (eg. 10% = 10, 75% = 75)
                                 # 100 = 100% opened
-MAX_MCP_VALUE       = 300;      # Max MCP value that the physical window can open
+MAX_MCP_VALUE       = 685;      # Max MCP value that the physical window can open
                                 # 0 = 100% open
+                                # Seem to be able to go to 692
 BLINDS_POSITION     = 0;        # Similar to WINDOW_POSITION
 TEMPERATURE         = 0.0;      # Current inside temperature
                                 # Temperature will be in Fahrenheit
@@ -133,13 +134,13 @@ def main():
             blindsAutoAlgorithm();
 
         # Creating a session and then checking for new emails every 2 seconds
-        if (newSec and time.localtime().tm_sec % 2 == 0):
-            session = imaplib.IMAP4_SSL('imap.gmail.com');
-            emails = checkForEmails(session);
-            # If new emails exist, read and parse them and then close the session
-            if emails != False:
-                readEmails(session, emails);
-                session.close();
+        # if (newSec and time.localtime().tm_sec % 2 == 0):
+        session = imaplib.IMAP4_SSL('imap.gmail.com');
+        emails = checkForEmails(session);
+        # If new emails exist, read and parse them and then close the session
+        if emails != False:
+            readEmails(session, emails);
+            session.close();
 
         newMin = False; # Wait until next minute
         newSec = False; # Wait until next second
@@ -339,28 +340,30 @@ def requestActionNowHandler(content):
     actions = removeWhitespaces(actions);
 
     if actions[0] == 'WINDOW_OPEN':
-        if WINDOW_POSITION < 100:
+        # if WINDOW_POSITION < 100:
             openWindow(100);
     elif actions[0] == 'WINDOW_CLOSE':
-        if WINDOW_POSITION > 0:
+        # if WINDOW_POSITION > 0:
             closeWindow(100);
     elif actions[0] == 'WINDOW_OPEN_POSITION':
-        if WINDOW_POSITION < float(actions[1]):
+        # if WINDOW_POSITION < float(actions[1]):
             openWindow(float(actions[1]));
     elif actions[0] == 'WINDOW_CLOSE_POSITION':
-        if WINDOW_POSITION > float(actions[1]):
+        # if WINDOW_POSITION > float(actions[1]):
             closeWindow(float(actions[1]));
+    elif actions[0] == 'WINDOW_POSITION':
+        positionWindow(float(actions[1]));
     elif actions[0] == 'BLINDS_OPEN':
-        if BLINDS_POSITION < 100:
+        # if BLINDS_POSITION < 100:
             openBlinds(100);
     elif actions[0] == 'BLINDS_CLOSE':
-        if BLINDS_POSITION > 0:
+        # if BLINDS_POSITION > 0:
             closeBlinds(0);
     elif actions[0] == 'BLINDS_OPEN_POSITION':
-        if BLINDS_POSITION < float(actions[1]):
+        # if BLINDS_POSITION < float(actions[1]):
             openBlinds(float(actions[1]));
     elif actions[0] == 'BLINDS_CLOSE_POSITION':
-        if BLINDS_POSITION > float(actions[1]):
+        # if BLINDS_POSITION > float(actions[1]):
             closeBlinds(float(actions[1]));
     elif actions[0] == 'PRESET_CHANGE':
         if PRESET != int(actions[1]):
@@ -472,12 +475,13 @@ def openWindow(percentage):
 
     GPIO.output(11, 0); # 0 to open
 
-    openTo = 1023 - (1023 - MAX_MCP_VALUE)*(percentage/100);
+    openTo = (1023 - (1023 - MAX_MCP_VALUE)) * (percentage/100);
+    print(openTo);
 
-    while int(ReadChannel(0)) >= int(openTo):
-        p.start(100);
+    while int(ReadChannel(0)) < int(openTo):
+        p1.start(100);
 
-    p.stop();           # Stopping the operation of the linear actuator
+    p1.stop();           # Stopping the operation of the linear actuator
 
 # Method for closing the window
 def closeWindow(percentage):
@@ -489,12 +493,35 @@ def closeWindow(percentage):
 
     GPIO.output(11, 1);	# 1 to close
 
-    closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) + MAX_MCP_VALUE;
+    # closeTo = (1023-MAX_MCP_VALUE) * (percentage / 100) - MAX_MCP_VALUE;
+    closeTo = MAX_MCP_VALUE * (percentage / 100) - MAX_MCP_VALUE;
 
-    while int(ReadChannel(0)) < int(closeTo):
-        p.start(100);
+    while int(ReadChannel(0)) >= int(closeTo) + 4:
+        p1.start(100);
 
-    p.stop();           # Stopping the operation of the linear actuator
+    p1.stop();           # Stopping the operation of the linear actuator
+
+# Method for positioning the window
+def positionWindow(percentage):
+    # Changing global variables
+    global WINDOW_POSITION;
+    WINDOW_POSITION = percentage;
+
+    print('Positioning window to ' + str(percentage) + '%...');
+
+    desiredPosition = MAX_MCP_VALUE * (percentage / 100);
+    currentWindowPosition = ReadChannel(0);
+
+    if (desiredPosition > currentWindowPosition):
+        GPIO.output(11, 0); # 0 to open
+        while int(ReadChannel(0)) <= int(desiredPosition):
+            p1.start(100);
+    else:
+        GPIO.output(11, 1); # 1 to close
+        while int(ReadChannel(0)) >= int(desiredPosition) + 4:
+            p1.start(100);
+
+    p1.stop();  # Stopping the operation of the linear actuator
 
 # Method for opening the blinds
 def openBlinds(percentage):
